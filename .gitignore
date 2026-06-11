@@ -1,0 +1,13 @@
+.venv/
+venv/
+data/
+*.xlsx
+*.xls
+*.csv
+*.json
+*.pem
+*.key
+desktop.ini
+__pycache__/
+*.pyc
+.streamlit/secrets.toml

@@ -5,6 +5,8 @@ from datetime import datetime, date
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import gspread
+from google.oauth2.service_account import Credentials
 
 
 st.set_page_config(
@@ -118,7 +120,7 @@ st.markdown(
     """
     <div class="main-title">
         <h1>Dashboard STA</h1>
-        <p>Control semanal de productos en Servicio Técnico Autorizado</p>
+        <p>Control semanal centralizado de productos en Servicio Técnico Autorizado</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -136,43 +138,79 @@ def limpiar_cp(valor):
     if isinstance(valor, (int, float)):
         return float(valor)
 
-    texto = str(valor)
-    texto = texto.replace("$", "")
-    texto = texto.replace(" ", "")
-    texto = texto.strip()
+    texto = str(valor).strip()
 
-    if "," in texto and "." in texto:
-        texto = texto.replace(".", "")
-        texto = texto.replace(",", ".")
-    elif "," in texto:
-        texto = texto.replace(",", ".")
-    elif texto.count(".") > 1:
-        texto = texto.replace(".", "")
-
-    numero = pd.to_numeric(texto, errors="coerce")
-
-    if pd.isna(numero):
+    if texto == "":
         return 0.0
 
-    return float(numero)
+    texto = (
+        texto.replace("$", "")
+        .replace("CLP", "")
+        .replace("clp", "")
+        .replace(" ", "")
+        .strip()
+    )
+
+    caracteres_validos = "0123456789,.-"
+    texto = "".join(c for c in texto if c in caracteres_validos)
+
+    if texto in ["", "-", ".", ","]:
+        return 0.0
+
+    try:
+        # Formato chileno: 59.618.016,79
+        if "." in texto and "," in texto:
+            texto = texto.replace(".", "")
+            texto = texto.replace(",", ".")
+            return float(texto)
+
+        # Formato con coma decimal: 59618016,79
+        if "," in texto and "." not in texto:
+            partes = texto.split(",")
+
+            if len(partes) == 2 and len(partes[1]) in [1, 2]:
+                texto = texto.replace(",", ".")
+                return float(texto)
+
+            texto = texto.replace(",", "")
+            return float(texto)
+
+        # Formato con puntos: puede ser miles o decimal
+        if "." in texto and "," not in texto:
+            partes = texto.split(".")
+
+            # Ejemplo: 70.116.656
+            if len(partes) > 2:
+                texto = texto.replace(".", "")
+                return float(texto)
+
+            # Ejemplo: 70.116 debe interpretarse como 70116 si son miles
+            if len(partes) == 2 and len(partes[1]) == 3:
+                texto = texto.replace(".", "")
+                return float(texto)
+
+            # Ejemplo: 70116656.0
+            return float(texto)
+
+        return float(texto)
+
+    except Exception:
+        return 0.0
 
 
 def formato_pesos(valor):
     if pd.isna(valor):
         return "$0"
 
-    numero = float(valor)
+    try:
+        numero = float(valor)
+    except Exception:
+        return "$0"
+
     signo = "-" if numero < 0 else ""
-    numero_abs = abs(numero)
+    numero = int(round(abs(numero), 0))
 
-    if abs(numero_abs - round(numero_abs)) < 0.005:
-        texto = f"{int(round(numero_abs)):,.0f}"
-    else:
-        texto = f"{numero_abs:,.2f}"
-
-    texto = texto.replace(",", "X").replace(".", ",").replace("X", ".")
-
-    return f"{signo}${texto}"
+    return f"{signo}${numero:,.0f}".replace(",", ".")
 
 
 def formato_numero(valor):
@@ -387,14 +425,65 @@ def nota_kpi(participacion, variacion):
 
 
 # --------------------------------------------------
-# FUNCIONES DE HISTÓRICO
+# FUNCIONES DE HISTÓRICO CENTRAL GOOGLE SHEETS
 # --------------------------------------------------
 
-def cargar_historico():
-    if not os.path.exists(ARCHIVO_HISTORICO):
-        return pd.DataFrame()
+COLUMNAS_HISTORICO = [
+    "Fecha Corte",
+    "Llave",
+    "Id Ficha",
+    "Id Producto",
+    "Serie",
+    "Descripción",
+    "Marca",
+    "Familia",
+    "Administrativo",
+    "STA",
+    "Proveedor",
+    "Días Proceso",
+    "CP",
+    "Tramo",
+    "Estado Control"
+]
 
-    historico = pd.read_csv(ARCHIVO_HISTORICO, dtype=str)
+
+@st.cache_resource(show_spinner=False)
+def obtener_worksheet_google():
+    service_account_info = dict(st.secrets["gcp_service_account"])
+
+    if "private_key" in service_account_info:
+        service_account_info["private_key"] = service_account_info["private_key"].replace("\\n", "\n")
+
+    scopes = [
+        "https://www.googleapis.com/auth/spreadsheets",
+        "https://www.googleapis.com/auth/drive",
+    ]
+
+    creds = Credentials.from_service_account_info(
+        service_account_info,
+        scopes=scopes,
+    )
+
+    client = gspread.authorize(creds)
+
+    sheet_name = st.secrets["app"].get("sheet_name", "Historico_STA_Dashboard")
+    worksheet_name = st.secrets["app"].get("worksheet_name", "Historico_STA")
+
+    sheet = client.open(sheet_name)
+    worksheet = sheet.worksheet(worksheet_name)
+
+    return worksheet
+
+
+def normalizar_historico(historico):
+    if historico.empty:
+        return historico
+
+    for columna in COLUMNAS_HISTORICO:
+        if columna not in historico.columns:
+            historico[columna] = ""
+
+    historico = historico[COLUMNAS_HISTORICO].copy()
 
     historico["Fecha Corte"] = pd.to_datetime(
         historico["Fecha Corte"],
@@ -406,53 +495,93 @@ def cargar_historico():
         errors="coerce"
     ).fillna(0).astype(int)
 
-    historico["CP"] = pd.to_numeric(
-        historico["CP"],
-        errors="coerce"
-    ).fillna(0.0)
+    historico["CP"] = historico["CP"].apply(limpiar_cp).round(0)
 
-    historico["Estado Control"] = historico["Días Proceso"].apply(clasificar_estado_control)
+    for columna in ["Llave", "Id Ficha", "Id Producto", "Serie", "Descripción", "Marca", "Familia", "Administrativo", "STA", "Proveedor"]:
+        historico[columna] = historico[columna].fillna("").astype(str).str.strip()
+
+    historico.loc[historico["STA"].isin(["", "651", "nan", "None"]), "STA"] = "Sin STA"
+
     historico["Tramo"] = historico["Días Proceso"].apply(clasificar_tramo)
+    historico["Estado Control"] = historico["Días Proceso"].apply(clasificar_estado_control)
 
     return historico
 
 
-def preparar_para_historico(df_base, fecha_corte):
-    columnas_historico = [
-        "Fecha Corte",
-        "Llave",
-        "Id Ficha",
-        "Id Producto",
-        "Serie",
-        "Descripción",
-        "Marca",
-        "Familia",
-        "Administrativo",
-        "STA",
-        "Proveedor",
-        "Días Proceso",
-        "CP",
-        "Tramo",
-        "Estado Control"
-    ]
+def cargar_historico():
+    try:
+        worksheet = obtener_worksheet_google()
+        registros = worksheet.get_all_records()
+    except Exception as error:
+        st.error("No se pudo conectar con el histórico central en Google Sheets.")
+        st.exception(error)
+        st.stop()
 
+    if not registros:
+        return pd.DataFrame(columns=COLUMNAS_HISTORICO)
+
+    historico = pd.DataFrame(registros)
+    return normalizar_historico(historico)
+
+
+def escribir_historico(historico_final):
+    worksheet = obtener_worksheet_google()
+
+    historico_salida = historico_final.copy()
+
+    for columna in COLUMNAS_HISTORICO:
+        if columna not in historico_salida.columns:
+            historico_salida[columna] = ""
+
+    historico_salida = historico_salida[COLUMNAS_HISTORICO].copy()
+    historico_salida["Fecha Corte"] = historico_salida["Fecha Corte"].astype(str)
+
+    historico_salida["CP"] = pd.to_numeric(
+        historico_salida["CP"],
+        errors="coerce"
+    ).fillna(0).round(0).astype(int)
+
+    historico_salida["Días Proceso"] = pd.to_numeric(
+        historico_salida["Días Proceso"],
+        errors="coerce"
+    ).fillna(0).round(0).astype(int)
+
+    historico_salida = historico_salida.fillna("")
+
+    valores = [COLUMNAS_HISTORICO] + historico_salida.values.tolist()
+
+    worksheet.clear()
+    worksheet.update(valores, value_input_option="RAW")
+
+
+def limpiar_historico_central():
+    worksheet = obtener_worksheet_google()
+    worksheet.clear()
+
+
+def preparar_para_historico(df_base, fecha_corte):
     df_hist = df_base.copy()
     df_hist["Fecha Corte"] = fecha_corte.isoformat()
 
-    for columna in columnas_historico:
+    if "CP" in df_hist.columns:
+        df_hist["CP"] = pd.to_numeric(
+            df_hist["CP"],
+            errors="coerce"
+        ).fillna(0).round(0).astype(int)
+
+    for columna in COLUMNAS_HISTORICO:
         if columna not in df_hist.columns:
             df_hist[columna] = ""
 
-    return df_hist[columnas_historico]
+    return df_hist[COLUMNAS_HISTORICO]
 
 
 def registrar_corte(df_base, fecha_corte):
     nuevo_corte = preparar_para_historico(df_base, fecha_corte)
-
     historico_actual = cargar_historico()
 
     if not historico_actual.empty:
-        historico_actual = historico_actual[historico_actual["Fecha Corte"] != fecha_corte]
+        historico_actual = historico_actual[historico_actual["Fecha Corte"] != fecha_corte].copy()
         historico_actual["Fecha Corte"] = historico_actual["Fecha Corte"].astype(str)
 
         historico_final = pd.concat(
@@ -462,7 +591,24 @@ def registrar_corte(df_base, fecha_corte):
     else:
         historico_final = nuevo_corte
 
-    historico_final.to_csv(ARCHIVO_HISTORICO, index=False, encoding="utf-8-sig")
+    escribir_historico(historico_final)
+
+
+def obtener_ultimo_corte():
+    historico = cargar_historico()
+
+    if historico.empty:
+        return None, None
+
+    fechas = sorted(historico["Fecha Corte"].dropna().unique())
+
+    if not fechas:
+        return None, None
+
+    fecha_actual = fechas[-1]
+    df_actual = historico[historico["Fecha Corte"] == fecha_actual].copy()
+
+    return fecha_actual, df_actual
 
 
 def obtener_corte_anterior(fecha_corte):
@@ -486,6 +632,78 @@ def obtener_corte_anterior(fecha_corte):
 
 
 # --------------------------------------------------
+# FUNCIONES DE CARGA Y PREPARACIÓN DE REPORTE
+# --------------------------------------------------
+
+def leer_reporte_sta(archivo):
+    excel = pd.ExcelFile(archivo)
+
+    if "Reporte - Bandeja" not in excel.sheet_names:
+        raise ValueError("No se encontró la hoja 'Reporte - Bandeja'.")
+
+    df_base = pd.read_excel(archivo, sheet_name="Reporte - Bandeja")
+    df_base = df_base.dropna(how="all")
+    df_base.columns = df_base.columns.astype(str).str.strip()
+
+    return preparar_dataframe_sta(df_base)
+
+
+def preparar_dataframe_sta(df_base):
+    df_preparado = df_base.copy()
+
+    columnas_requeridas = [
+        "Id Ficha",
+        "Id Producto",
+        "Serie",
+        "Descripción",
+        "Marca",
+        "Usuario Emisor",
+        "Sta",
+        "Días Proceso",
+        "CP"
+    ]
+
+    columnas_faltantes = [columna for columna in columnas_requeridas if columna not in df_preparado.columns]
+
+    if columnas_faltantes:
+        raise ValueError(f"Faltan columnas necesarias en la hoja 'Reporte - Bandeja': {columnas_faltantes}")
+
+    df_preparado["Días Proceso"] = pd.to_numeric(
+        df_preparado["Días Proceso"],
+        errors="coerce"
+    ).fillna(0).astype(int)
+
+    df_preparado["CP"] = df_preparado["CP"].apply(limpiar_cp)
+
+    df_preparado["Administrativo"] = df_preparado["Usuario Emisor"].fillna("Sin asignar").astype(str).str.strip()
+    df_preparado["Marca"] = df_preparado["Marca"].fillna("Sin marca").astype(str).str.strip()
+    df_preparado["STA"] = df_preparado["Sta"].fillna("Sin STA").astype(str).str.strip()
+
+    if "Familia" not in df_preparado.columns:
+        df_preparado["Familia"] = ""
+
+    if "Proveedor" not in df_preparado.columns:
+        df_preparado["Proveedor"] = ""
+
+    df_preparado["Familia"] = df_preparado["Familia"].fillna("Sin familia").astype(str).str.strip()
+    df_preparado["Proveedor"] = df_preparado["Proveedor"].fillna("Sin proveedor").astype(str).str.strip()
+
+    df_preparado.loc[df_preparado["STA"].isin(["", "651", "nan", "None"]), "STA"] = "Sin STA"
+
+    df_preparado["Tramo"] = df_preparado["Días Proceso"].apply(clasificar_tramo)
+    df_preparado["Estado Control"] = df_preparado["Días Proceso"].apply(clasificar_estado_control)
+
+    df_preparado["Llave"] = (
+        df_preparado["Id Ficha"].astype(str).str.strip()
+        + "|"
+        + df_preparado["Id Producto"].astype(str).str.strip()
+        + "|"
+        + df_preparado["Serie"].astype(str).str.strip()
+    )
+
+    return df_preparado
+
+
 # FUNCIONES DE FILTROS Y MOVIMIENTOS
 # --------------------------------------------------
 
@@ -948,99 +1166,8 @@ def crear_excel_descarga(
 
 
 # --------------------------------------------------
-# SIDEBAR
+# SIDEBAR Y FUENTE DE DATOS
 # --------------------------------------------------
-
-st.sidebar.header("Configuración")
-
-fecha_corte = st.sidebar.date_input(
-    "Fecha de corte del reporte",
-    value=date.today()
-)
-
-archivo = st.file_uploader(
-    "Carga aquí el archivo Excel del reporte STA",
-    type=["xlsx"]
-)
-
-if archivo is None:
-    st.info("Carga el archivo Excel para comenzar.")
-    st.stop()
-
-
-# --------------------------------------------------
-# CARGA DE DATA
-# --------------------------------------------------
-
-try:
-    excel = pd.ExcelFile(archivo)
-
-    if "Reporte - Bandeja" not in excel.sheet_names:
-        st.error("No se encontró la hoja 'Reporte - Bandeja'.")
-        st.stop()
-
-    df = pd.read_excel(archivo, sheet_name="Reporte - Bandeja")
-    df = df.dropna(how="all")
-    df.columns = df.columns.astype(str).str.strip()
-
-except Exception as error:
-    st.error("No se pudo leer el archivo Excel.")
-    st.exception(error)
-    st.stop()
-
-
-columnas_requeridas = [
-    "Id Ficha",
-    "Id Producto",
-    "Serie",
-    "Descripción",
-    "Marca",
-    "Usuario Emisor",
-    "Sta",
-    "Días Proceso",
-    "CP"
-]
-
-columnas_faltantes = [columna for columna in columnas_requeridas if columna not in df.columns]
-
-if columnas_faltantes:
-    st.error("Faltan columnas necesarias en la hoja 'Reporte - Bandeja':")
-    st.write(columnas_faltantes)
-    st.stop()
-
-
-# --------------------------------------------------
-# PREPARACIÓN DE DATA
-# --------------------------------------------------
-
-df["Días Proceso"] = pd.to_numeric(df["Días Proceso"], errors="coerce").fillna(0).astype(int)
-df["CP"] = df["CP"].apply(limpiar_cp)
-
-df["Administrativo"] = df["Usuario Emisor"].fillna("Sin asignar").astype(str).str.strip()
-df["Marca"] = df["Marca"].fillna("Sin marca").astype(str).str.strip()
-df["STA"] = df["Sta"].fillna("Sin STA").astype(str).str.strip()
-
-if "Familia" not in df.columns:
-    df["Familia"] = ""
-
-if "Proveedor" not in df.columns:
-    df["Proveedor"] = ""
-
-df["Familia"] = df["Familia"].fillna("Sin familia").astype(str).str.strip()
-df["Proveedor"] = df["Proveedor"].fillna("Sin proveedor").astype(str).str.strip()
-
-df.loc[df["STA"].isin(["", "651", "nan", "None"]), "STA"] = "Sin STA"
-
-df["Tramo"] = df["Días Proceso"].apply(clasificar_tramo)
-df["Estado Control"] = df["Días Proceso"].apply(clasificar_estado_control)
-
-df["Llave"] = (
-    df["Id Ficha"].astype(str).str.strip()
-    + "|"
-    + df["Id Producto"].astype(str).str.strip()
-    + "|"
-    + df["Serie"].astype(str).str.strip()
-)
 
 orden_tramos = [
     "0 a 30 días",
@@ -1058,26 +1185,113 @@ orden_estado = [
 
 estado_definiciones = obtener_definicion_estados()
 
+st.sidebar.header("Configuración")
 
-# --------------------------------------------------
-# REGISTRO DE HISTÓRICO
-# --------------------------------------------------
-
-st.sidebar.divider()
-st.sidebar.header("Histórico semanal")
-
-if st.sidebar.button("Registrar corte semanal"):
-    registrar_corte(df, fecha_corte)
-    st.sidebar.success(f"Corte {fecha_corte.strftime('%d-%m-%Y')} registrado correctamente.")
+modo_acceso = st.sidebar.radio(
+    "Modo de acceso",
+    ["Supervisor", "Administrador"],
+    index=0
+)
 
 historico = cargar_historico()
 
+df_cargado = None
+fecha_corte_cargado = None
+
+if modo_acceso == "Administrador":
+    st.sidebar.divider()
+    st.sidebar.subheader("Carga de cortes")
+
+    clave_ingresada = st.sidebar.text_input(
+        "Clave administrador",
+        type="password"
+    )
+
+    clave_admin = st.secrets["app"].get("admin_password", "")
+
+    if clave_ingresada == "":
+        st.sidebar.info("Ingresa la clave para habilitar la carga de cortes.")
+    elif clave_ingresada != clave_admin:
+        st.sidebar.error("Clave incorrecta. Se mantiene vista de solo lectura.")
+    else:
+        st.sidebar.success("Modo administrador habilitado.")
+
+        fecha_admin = st.sidebar.date_input(
+            "Fecha de corte del reporte",
+            value=date.today()
+        )
+
+        archivo = st.sidebar.file_uploader(
+            "Carga aquí el archivo Excel del reporte STA",
+            type=["xlsx"]
+        )
+
+        if archivo is not None:
+            try:
+                df_cargado = leer_reporte_sta(archivo)
+                fecha_corte_cargado = fecha_admin
+
+                st.sidebar.success(
+                    f"Archivo cargado: {formato_numero(len(df_cargado))} productos."
+                )
+
+                if st.sidebar.button("Guardar corte en histórico central"):
+                    registrar_corte(df_cargado, fecha_admin)
+                    st.sidebar.success(
+                        f"Corte {fecha_admin.strftime('%d-%m-%Y')} guardado correctamente."
+                    )
+                    st.rerun()
+
+            except Exception as error:
+                st.error("No se pudo procesar el archivo cargado.")
+                st.exception(error)
+                st.stop()
+        else:
+            st.sidebar.info("Carga un Excel solo cuando necesites registrar un nuevo corte.")
+
+        st.sidebar.divider()
+        st.sidebar.subheader("Mantenimiento")
+        confirmacion_limpieza = st.sidebar.text_input(
+            "Para limpiar el histórico central, escribe LIMPIAR",
+            value=""
+        )
+
+        if st.sidebar.button("Limpiar histórico central"):
+            if confirmacion_limpieza == "LIMPIAR":
+                limpiar_historico_central()
+                st.sidebar.success("Histórico central limpiado correctamente.")
+                st.rerun()
+            else:
+                st.sidebar.error("Debes escribir LIMPIAR para confirmar.")
+
+st.sidebar.divider()
+st.sidebar.header("Histórico central")
+
 if historico.empty:
-    st.sidebar.info("Aún no hay histórico registrado.")
+    st.sidebar.info("Aún no hay cortes registrados en Google Sheets.")
 else:
     cortes_registrados = sorted(historico["Fecha Corte"].dropna().unique())
     st.sidebar.success(f"Cortes registrados: {len(cortes_registrados)}")
     st.sidebar.write([fecha.strftime("%d-%m-%Y") for fecha in cortes_registrados])
+
+if df_cargado is not None:
+    df = df_cargado.copy()
+    fecha_corte = fecha_corte_cargado
+    st.info(
+        "Vista previa del archivo cargado en modo administrador. "
+        "Si aún no guardaste el corte, los supervisores todavía verán el último corte registrado."
+    )
+else:
+    fecha_corte, df = obtener_ultimo_corte()
+
+    if df is None or df.empty:
+        st.info(
+            "Todavía no hay cortes registrados en el histórico central. "
+            "Ingresa como Administrador, carga el primer Excel y guarda el corte."
+        )
+        st.stop()
+
+st.caption(f"Corte visualizado: {fecha_corte.strftime('%d-%m-%Y')}")
 
 
 # --------------------------------------------------
