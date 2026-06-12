@@ -1,4 +1,5 @@
 import io
+import html
 import os
 from datetime import datetime, date
 
@@ -39,76 +40,535 @@ COLOR_ESTADOS = {
 
 # --------------------------------------------------
 # ESTILO VISUAL
+# Versión v16.7 final con iconografía sobria y fondo técnico sutil
 # --------------------------------------------------
 
 st.markdown(
     """
     <style>
+        :root {
+            --bg-app: #F4F6F8;
+            --surface: #FFFFFF;
+            --surface-soft: #F7F9FC;
+            --text-main: #111827;
+            --text-muted: #6B7280;
+            --border: #DDE3EA;
+            --navy: #123047;
+            --navy-2: #1E425D;
+            --blue: #1976D2;
+            --green: #2E7D32;
+            --amber: #F59E0B;
+            --red: #C62828;
+        }
+
+        .stApp {
+            background: var(--bg-app);
+        }
+
+        .main .block-container {
+            padding-top: 0rem;
+            padding-bottom: 2.5rem;
+            max-width: 1520px;
+        }
+
+        [data-testid="stSidebar"] {
+            background: #FFFFFF;
+            border-right: 1px solid var(--border);
+        }
+
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3 {
+            color: var(--text-main);
+        }
+
         .main-title {
-            background: linear-gradient(90deg, #12372A 0%, #1F6F50 100%);
-            padding: 22px 28px;
-            border-radius: 14px;
+            background: linear-gradient(90deg, var(--navy) 0%, var(--navy-2) 100%);
+            padding: 13px 22px;
+            border-radius: 11px;
             color: white;
-            margin-bottom: 18px;
+            margin-top: -2.25rem;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            box-shadow: 0 2px 7px rgba(17,24,39,0.08);
         }
 
         .main-title h1 {
             margin: 0;
-            font-size: 34px;
+            font-size: 27px;
+            line-height: 1.05;
+            letter-spacing: -0.02em;
+            font-weight: 850;
         }
 
         .main-title p {
-            margin: 6px 0 0 0;
-            font-size: 15px;
-            opacity: 0.92;
+            margin: 5px 0 0 0;
+            font-size: 12.5px;
+            opacity: 0.90;
+        }
+
+        .title-mark {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            margin-right: 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.14);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            color: #FFFFFF;
+            font-size: 17px;
+            vertical-align: -2px;
+        }
+
+        .process-flow {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin: -3px 0 13px 0;
+        }
+
+        .process-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 9px;
+            border: 1px solid #D7E5F0;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.82);
+            color: var(--navy);
+            font-size: 11.5px;
+            font-weight: 800;
+            box-shadow: 0 1px 2px rgba(15,23,42,0.035);
+        }
+
+        .process-chip span {
+            color: var(--blue);
+            font-size: 12px;
+            font-weight: 900;
+        }
+
+        .cutoff-strip {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-left: 5px solid var(--navy);
+            border-radius: 11px;
+            background: var(--surface);
+            color: var(--text-main);
+            margin: 7px 0 12px 0;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.05);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .cutoff-pill {
+            display: inline-block;
+            background: #EEF4FA;
+            color: var(--navy);
+            border: 1px solid #D7E5F0;
+            border-radius: 999px;
+            padding: 3px 9px;
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        .section-title-wrap {
+            margin: 20px 0 10px 0;
+            padding: 0 0 0 11px;
+            border-left: 5px solid var(--navy);
+        }
+
+        .section-title-wrap h3 {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 21px;
+            line-height: 1.1;
+            font-weight: 850;
+            letter-spacing: -0.01em;
+        }
+
+        .section-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 25px;
+            height: 25px;
+            margin-right: 8px;
+            border-radius: 8px;
+            background: #EEF4FA;
+            border: 1px solid #D7E5F0;
+            color: var(--navy);
+            font-size: 14px;
+            vertical-align: -3px;
+        }
+
+        .section-title-wrap p {
+            margin: 4px 0 0 0;
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.35;
+        }
+
+        .module-note {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: -2px;
+            margin-bottom: 8px;
         }
 
         .kpi-card {
-            padding: 20px 20px;
-            border-radius: 14px;
-            border: 1px solid #E6E6E6;
-            background-color: #FFFFFF;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-            min-height: 132px;
+            padding: 13px 15px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background-color: var(--surface);
+            box-shadow: 0 1px 4px rgba(15,23,42,0.05);
+            min-height: 108px;
         }
 
         .kpi-title {
-            font-size: 16px;
-            color: #4A4A4A;
-            margin-bottom: 9px;
-            font-weight: 700;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 7px;
+            font-weight: 800;
             line-height: 1.25;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
         }
 
+        .kpi-head-row {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            margin-bottom: 7px;
+        }
+
+        .kpi-head-row .kpi-title {
+            margin-bottom: 0;
+        }
+
+        .kpi-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 24px;
+            width: 24px;
+            height: 24px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 900;
+            background: #F1F5F9;
+            color: var(--navy);
+            border: 1px solid #D7E5F0;
+        }
+
+        .green-card .kpi-icon { color: var(--green); background: #F1FAF3; border-color: #CFEBD6; }
+        .blue-card .kpi-icon { color: var(--blue); background: #F1F7FF; border-color: #D6E8FF; }
+        .orange-card .kpi-icon { color: #A16207; background: #FFF8E6; border-color: #FDE7B0; }
+        .red-card .kpi-icon { color: var(--red); background: #FFF1F1; border-color: #F4C7C7; }
+
         .kpi-value {
-            font-size: 32px;
-            font-weight: 850;
-            color: #111111;
-            line-height: 1.1;
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--text-main);
+            line-height: 1.05;
+            letter-spacing: -0.03em;
         }
 
         .kpi-note {
-            font-size: 14px;
-            margin-top: 9px;
-            color: #555555;
+            font-size: 12px;
+            margin-top: 7px;
+            color: #4B5563;
             line-height: 1.35;
+            font-weight: 600;
+        }
+
+        .green-card { border-left: 6px solid var(--green); }
+        .orange-card { border-left: 6px solid var(--amber); }
+        .red-card { border-left: 6px solid var(--red); }
+        .blue-card { border-left: 6px solid var(--blue); }
+
+        .postit-card {
+            border-radius: 13px;
+            padding: 13px 14px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            box-shadow: 0 1px 4px rgba(15,23,42,0.05);
+        }
+
+        .postit-card.info {
+            border-left: 6px solid var(--blue);
+            background: #F4F8FD;
+        }
+
+        .postit-card.warning {
+            border-left: 6px solid var(--amber);
+            background: #FFFAEC;
+        }
+
+        .postit-card.danger {
+            border-left: 6px solid var(--red);
+            background: #FFF3F3;
+        }
+
+        .postit-card.success {
+            border-left: 6px solid var(--green);
+            background: #F4FBF6;
+        }
+
+        .postit-title {
+            font-size: 14px;
+            font-weight: 850;
+            color: var(--text-main);
+            margin-bottom: 5px;
+            letter-spacing: -0.01em;
+        }
+
+        .postit-text {
+            font-size: 13.5px;
+            color: #374151;
+            line-height: 1.4;
             font-weight: 500;
         }
 
-        .green-card {
-            border-left: 7px solid #2E7D32;
+        .priority-box {
+            border: 1px solid var(--border);
+            border-left: 7px solid var(--red);
+            border-radius: 14px;
+            background: var(--surface);
+            padding: 13px 15px;
+            margin: 10px 0 16px 0;
+            box-shadow: 0 1px 5px rgba(15,23,42,0.06);
         }
 
-        .orange-card {
-            border-left: 7px solid #F9A825;
+        .priority-title {
+            font-size: 17px;
+            font-weight: 900;
+            color: var(--text-main);
+            margin-bottom: 7px;
+            letter-spacing: -0.01em;
         }
 
-        .red-card {
-            border-left: 7px solid #C62828;
+        .priority-item {
+            font-size: 13px;
+            line-height: 1.45;
+            margin: 4px 0;
+            color: #30343B;
         }
 
-        .blue-card {
-            border-left: 7px solid #1976D2;
+        .priority-label {
+            font-weight: 850;
+            color: var(--red);
+        }
+
+        .sidebar-note {
+            font-size: 12px;
+            color: var(--text-muted);
+            line-height: 1.25;
+        }
+
+        .section-caption-tight {
+            color: var(--text-muted);
+            font-size: 13px;
+            margin-top: -2px;
+            margin-bottom: 8px;
+        }
+
+        div[data-testid="stMetric"] {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            padding: 10px 13px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        }
+
+        div[data-testid="stMetricLabel"] p {
+            color: var(--text-muted);
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        div[data-testid="stMetricValue"] {
+            color: var(--text-main);
+            font-weight: 900;
+        }
+
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 6px;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            background: #F1F4F8;
+            border-radius: 9px 9px 0 0;
+            padding: 7px 11px;
+            font-weight: 750;
+        }
+
+        .stTabs [aria-selected="true"] {
+            background: #FFFFFF !important;
+            color: var(--navy) !important;
+            border-top: 3px solid var(--navy);
+        }
+
+
+        /* Encabezados de tablas más visibles */
+        div[data-testid="stDataFrame"] [role="columnheader"] {
+            background-color: var(--navy) !important;
+            color: #FFFFFF !important;
+            font-weight: 850 !important;
+            border-color: #0B2538 !important;
+        }
+
+        div[data-testid="stDataFrame"] [role="columnheader"] * {
+            color: #FFFFFF !important;
+            fill: #FFFFFF !important;
+        }
+
+        div[data-testid="stDataFrame"] {
+            border-radius: 11px !important;
+            overflow: hidden !important;
+            border: 1px solid var(--border) !important;
+        }
+
+        /* Fallback para tablas HTML generadas por pandas Styler */
+        table thead th {
+            background-color: var(--navy) !important;
+            color: #FFFFFF !important;
+            font-weight: 850 !important;
+            border-color: #0B2538 !important;
+        }
+
+        /* Tablas operativas HTML: encabezado navy real, sticky y filas con semáforo suave */
+        .op-table-wrapper {
+            width: 100%;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow-x: auto;
+            overflow-y: auto;
+            margin: 6px 0 14px 0;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.035);
+        }
+
+        .op-table-wrapper table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            font-size: 12.5px !important;
+            color: var(--text-main) !important;
+            background: #FFFFFF !important;
+            margin: 0 !important;
+        }
+
+        .op-table-wrapper thead th,
+        .op-table-wrapper table thead tr th,
+        .op-table-wrapper table thead th.col_heading,
+        .op-table-wrapper table thead th.blank {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 3 !important;
+            background: var(--navy) !important;
+            background-color: var(--navy) !important;
+            color: #FFFFFF !important;
+            font-weight: 850 !important;
+            padding: 9px 8px !important;
+            border: 1px solid #0B2538 !important;
+            text-align: left !important;
+            white-space: nowrap !important;
+        }
+
+        .op-table-wrapper tbody td,
+        .op-table-wrapper table tbody tr td {
+            padding: 8px 8px !important;
+            border: 1px solid #E5E7EB !important;
+            vertical-align: middle !important;
+            white-space: nowrap !important;
+        }
+
+        .op-table-wrapper tbody tr:hover td {
+            filter: brightness(0.985);
+        }
+
+
+        .developer-credit {
+            margin-top: 16px;
+            padding: 10px 11px;
+            border: 1px solid #D7E5F0;
+            border-left: 5px solid var(--navy);
+            border-radius: 11px;
+            background: #F8FAFC;
+            color: var(--text-main);
+            font-size: 12px;
+            line-height: 1.35;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.04);
+        }
+
+        .developer-credit strong {
+            color: var(--navy);
+            font-size: 12.5px;
+            font-weight: 900;
+        }
+
+        .developer-credit span {
+            color: var(--text-muted);
+            font-weight: 650;
+        }
+
+        .app-footer {
+            margin-top: 26px;
+            padding: 12px 14px 2px 14px;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .app-footer strong {
+            color: var(--navy);
+            font-weight: 900;
+        }
+
+
+        /* Pulido visual final */
+        hr {
+            margin: 1.15rem 0 1rem 0 !important;
+            border-color: #DDE3EA !important;
+        }
+
+        div[data-testid="stPlotlyChart"] {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            border-radius: 13px;
+            padding: 8px 10px 2px 10px;
+            box-shadow: 0 1px 3px rgba(15,23,42,0.035);
+        }
+
+        div[data-testid="stExpander"] {
+            border: 1px solid var(--border);
+            border-radius: 11px;
+            background: #FFFFFF;
+        }
+
+        div[data-testid="stExpander"] summary {
+            font-size: 13px;
+            font-weight: 750;
+            color: var(--text-main);
+        }
+
+        .stButton > button {
+            border-radius: 10px;
+            border: 1px solid #CBD5E1;
+            font-weight: 750;
+        }
+
+        .stDownloadButton > button {
+            border-radius: 10px;
+            font-weight: 800;
         }
     </style>
     """,
@@ -119,8 +579,8 @@ st.markdown(
 st.markdown(
     """
     <div class="main-title">
-        <h1>Dashboard STA</h1>
-        <p>Control semanal centralizado de productos en Servicio Técnico Autorizado</p>
+        <h1><span class="title-mark">▣</span>Dashboard STA</h1>
+        <p>Control Operativo Semanal · Productos en Servicio Técnico Autorizado</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -225,6 +685,40 @@ def formato_porcentaje_puntos(valor):
     return f"{float(valor):.1f}%".replace(".", ",")
 
 
+def normalizar_nombre_persona(valor, valor_vacio="Sin asignar"):
+    """Normaliza nombres provenientes de Sphinx a formato legible.
+
+    Ejemplo: 'HUGO ALVAREZ PERALTA' -> 'Hugo Alvarez Peralta'.
+    Mantiene iniciales con punto: 'JAVIERA GUTIERREZ C.' -> 'Javiera Gutierrez C.'.
+    """
+    if pd.isna(valor):
+        return valor_vacio
+
+    texto = str(valor).strip()
+
+    if texto == "" or texto.lower() in ["nan", "none"]:
+        return valor_vacio
+
+    texto = " ".join(texto.split())
+    palabras_normalizadas = []
+
+    for palabra in texto.split(" "):
+        palabra_limpia = palabra.strip()
+
+        if palabra_limpia == "":
+            continue
+
+        # Iniciales del tipo C. / U. / L.
+        if len(palabra_limpia) == 2 and palabra_limpia.endswith("."):
+            palabras_normalizadas.append(palabra_limpia[0].upper() + ".")
+            continue
+
+        # Palabras normales del nombre/apellido.
+        palabras_normalizadas.append(palabra_limpia.lower().capitalize())
+
+    return " ".join(palabras_normalizadas) if palabras_normalizadas else valor_vacio
+
+
 def porcentaje_puntos(valor, total):
     if total is None or total == 0:
         return 0.0
@@ -247,6 +741,297 @@ def preparar_display_pesos(df_base, columnas_pesos=None, columnas_porcentaje=Non
                 )
 
     return df_display
+
+
+COLOR_FONDO_FILAS = {
+    "Normal": "#F1FAF3",
+    "Seguimiento": "#F1F7FF",
+    "Atrasado": "#FFF8E6",
+    "Crítico": "#FFF1F1",
+}
+
+COLOR_TEXTO_FILAS = {
+    "Normal": "#174D27",
+    "Seguimiento": "#123A75",
+    "Atrasado": "#6B4500",
+    "Crítico": "#7F1D1D",
+}
+
+TRAMO_A_ESTADO = {
+    "0 a 30 días": "Normal",
+    "31 a 60 días": "Seguimiento",
+    "61 a 120 días": "Atrasado",
+    "Más de 120 días": "Crítico",
+}
+
+
+def obtener_estado_visual_fila(fila):
+    columnas_estado = [
+        "Estado Control",
+        "Estado control",
+        "Estado actual",
+        "Estado Control_actual",
+    ]
+
+    for columna in columnas_estado:
+        if columna in fila.index:
+            valor = str(fila[columna]).strip()
+            if valor in COLOR_FONDO_FILAS:
+                return valor
+
+    columnas_tramo = [
+        "Tramo",
+        "Tramo asociado",
+        "Tramo_actual",
+    ]
+
+    for columna in columnas_tramo:
+        if columna in fila.index:
+            valor = str(fila[columna]).strip()
+            if valor in TRAMO_A_ESTADO:
+                return TRAMO_A_ESTADO[valor]
+
+    columnas_dias = [
+        "Días Proceso",
+        "Días actual",
+        "Días Proceso_actual",
+    ]
+
+    for columna in columnas_dias:
+        if columna in fila.index:
+            try:
+                dias = float(str(fila[columna]).replace(".", "").replace(",", "."))
+                return clasificar_estado_control(dias)
+            except Exception:
+                continue
+
+    return None
+
+
+def aplicar_color_operativo_fila(fila):
+    estado = obtener_estado_visual_fila(fila)
+
+    if estado is None:
+        return ["" for _ in fila]
+
+    fondo = COLOR_FONDO_FILAS.get(estado, "#FFFFFF")
+    color_estado = COLOR_ESTADOS.get(estado, "#E5E7EB")
+    texto = COLOR_TEXTO_FILAS.get(estado, "#111827")
+
+    estilos = [
+        f"background-color: {fondo}; color: #111827;"
+        for _ in fila
+    ]
+
+    # Refuerzo visual suave en la primera columna de la fila.
+    if estilos:
+        estilos[0] += f" border-left: 5px solid {color_estado}; color: {texto}; font-weight: 700;"
+
+    return estilos
+
+
+def normalizar_nombre_columna(nombre_columna):
+    texto = str(nombre_columna).strip().lower()
+    reemplazos = {
+        "á": "a",
+        "é": "e",
+        "í": "i",
+        "ó": "o",
+        "ú": "u",
+        "ñ": "n",
+    }
+
+    for origen, destino in reemplazos.items():
+        texto = texto.replace(origen, destino)
+
+    texto = " ".join(texto.split())
+    return texto
+
+
+def obtener_estado_visual_columna(nombre_columna):
+    """Asocia columnas operativas a colores de tramo/estado.
+
+    Esto permite que tablas resumen, como administrativos/STA/marca, muestren
+    el bloque de seguimiento, atraso y criticidad por columna, aunque no tengan
+    una columna única de Estado Control o Tramo por fila.
+    """
+    col = normalizar_nombre_columna(nombre_columna)
+
+    columnas_normal = {
+        "normal",
+        "0 a 30 dias",
+        "0-30 dias",
+    }
+
+    columnas_seguimiento = {
+        "seguimiento",
+        "31 a 60 dias",
+        "31-60 dias",
+        "% seguimiento",
+    }
+
+    columnas_atrasado = {
+        "atrasado",
+        "61 a 120 dias",
+        "61-120 dias",
+        ">60 dias",
+        "cp >60 dias",
+        "cp sobre 60 dias",
+        "% atrasado",
+        "% atraso",
+    }
+
+    columnas_critico = {
+        "critico",
+        "criticos",
+        "criticos >120",
+        "criticos >120 dias",
+        "mas de 120 dias",
+        ">120 dias",
+        "cp >120 dias",
+        "% critico",
+        "% criticos",
+    }
+
+    if col in columnas_normal:
+        return "Normal"
+    if col in columnas_seguimiento:
+        return "Seguimiento"
+    if col in columnas_atrasado:
+        return "Atrasado"
+    if col in columnas_critico:
+        return "Crítico"
+
+    return None
+
+
+def aplicar_color_operativo_columnas(df_base):
+    """Colorea columnas resumen asociadas a tramos/estados.
+
+    Se usa solo cuando la fila no tiene un estado/tramo propio. Si la fila ya
+    está coloreada por Estado Control, Tramo o Días Proceso, se respeta el color
+    de fila para no mezclar lecturas.
+    """
+    estilos = pd.DataFrame("", index=df_base.index, columns=df_base.columns)
+
+    for indice, fila in df_base.iterrows():
+        if obtener_estado_visual_fila(fila) is not None:
+            continue
+
+        for columna in df_base.columns:
+            estado_columna = obtener_estado_visual_columna(columna)
+
+            if estado_columna is None:
+                continue
+
+            fondo = COLOR_FONDO_FILAS.get(estado_columna, "#FFFFFF")
+            texto = COLOR_TEXTO_FILAS.get(estado_columna, "#111827")
+            estilos.loc[indice, columna] = (
+                f"background-color: {fondo}; color: {texto}; font-weight: 700;"
+            )
+
+    return estilos
+
+
+def estilo_tabla_operativa(df_base):
+    """Aplica encabezado azul marino y color suave por fila o columna según tramo/estado."""
+    return (
+        df_base
+        .style
+        .apply(aplicar_color_operativo_fila, axis=1)
+        .apply(aplicar_color_operativo_columnas, axis=None)
+        .set_table_styles(
+            [
+                {
+                    "selector": "thead th",
+                    "props": [
+                        ("background-color", "#123047"),
+                        ("color", "#FFFFFF"),
+                        ("font-weight", "850"),
+                        ("border-color", "#0B2538"),
+                    ],
+                },
+                {
+                    "selector": "tbody td",
+                    "props": [
+                        ("border-color", "#E5E7EB"),
+                    ],
+                },
+            ]
+        )
+    )
+
+
+_ST_DATAFRAME_ORIGINAL = st.dataframe
+
+
+def _es_pandas_styler(objeto):
+    return objeto.__class__.__name__ == "Styler" and hasattr(objeto, "to_html") and hasattr(objeto, "data")
+
+
+def _render_tabla_html_operativa(datos, hide_index=True, height=None):
+    """Renderiza tablas como HTML para controlar de forma real el color de encabezados."""
+    if _es_pandas_styler(datos):
+        styler = datos
+        df_referencia = datos.data
+    elif isinstance(datos, pd.DataFrame):
+        styler = estilo_tabla_operativa(datos)
+        df_referencia = datos
+    else:
+        return False
+
+    if hide_index:
+        try:
+            styler = styler.hide(axis="index")
+        except Exception:
+            pass
+
+    try:
+        filas = len(df_referencia)
+    except Exception:
+        filas = 0
+
+    if height is not None:
+        alto = int(height)
+    elif filas > 18:
+        alto = 520
+    elif filas > 10:
+        alto = 430
+    else:
+        alto = None
+
+    estilo_alto = f"max-height: {alto}px;" if alto else ""
+    html_tabla = styler.to_html()
+
+    st.markdown(
+        f'<div class="op-table-wrapper" style="{estilo_alto}">{html_tabla}</div>',
+        unsafe_allow_html=True
+    )
+
+    return True
+
+
+def dataframe_operativa(datos=None, *args, use_container_width=True, hide_index=False, height=None, **kwargs):
+    """Reemplazo visual controlado para st.dataframe.
+
+    Streamlit dibuja varios encabezados de st.dataframe en canvas, por eso el CSS no siempre
+    cambia el color del header. Esta función usa HTML cuando recibe DataFrame/Styler y mantiene
+    el fallback original para cualquier otro caso.
+    """
+    if datos is not None and _render_tabla_html_operativa(datos, hide_index=hide_index, height=height):
+        return None
+
+    return _ST_DATAFRAME_ORIGINAL(
+        datos,
+        *args,
+        use_container_width=use_container_width,
+        hide_index=hide_index,
+        height=height,
+        **kwargs
+    )
+
+
+st.dataframe = dataframe_operativa
 
 
 def clasificar_tramo(dias):
@@ -302,11 +1087,36 @@ def obtener_definicion_estados():
     )
 
 
+def obtener_icono_kpi(titulo):
+    titulo_limpio = str(titulo).lower()
+
+    if "cp" in titulo_limpio:
+        return "$"
+    if "total" in titulo_limpio:
+        return "▦"
+    if "seguimiento" in titulo_limpio:
+        return "◔"
+    if "atras" in titulo_limpio or "60" in titulo_limpio:
+        return "▲"
+    if "crít" in titulo_limpio or "critic" in titulo_limpio or "120" in titulo_limpio:
+        return "●"
+    if "mediana" in titulo_limpio:
+        return "◧"
+    if "máximo" in titulo_limpio or "maximo" in titulo_limpio:
+        return "⏱"
+
+    return "▣"
+
+
 def kpi_card(titulo, valor, nota, clase):
+    icono = obtener_icono_kpi(titulo)
     st.markdown(
         f"""
         <div class="kpi-card {clase}">
-            <div class="kpi-title">{titulo}</div>
+            <div class="kpi-head-row">
+                <span class="kpi-icon">{icono}</span>
+                <div class="kpi-title">{texto_seguro(titulo)}</div>
+            </div>
             <div class="kpi-value">{valor}</div>
             <div class="kpi-note">{nota}</div>
         </div>
@@ -424,6 +1234,529 @@ def nota_kpi(participacion, variacion):
     return f"Vs corte anterior: {variacion}"
 
 
+
+def texto_seguro(valor):
+    return html.escape(str(valor))
+
+
+def postit_card(titulo, texto, clase="info"):
+    st.markdown(
+        f"""
+        <div class="postit-card {clase}">
+            <div class="postit-title">{texto_seguro(titulo)}</div>
+            <div class="postit-text">{texto_seguro(texto)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def obtener_icono_seccion(titulo):
+    titulo_limpio = str(titulo).lower()
+
+    if "resumen" in titulo_limpio:
+        return "▦"
+    if "control" in titulo_limpio:
+        return "◈"
+    if "análisis" in titulo_limpio or "analisis" in titulo_limpio:
+        return "▤"
+    if "movimiento" in titulo_limpio or "cambio" in titulo_limpio:
+        return "↻"
+    if "histórico" in titulo_limpio or "historico" in titulo_limpio:
+        return "⌁"
+    if "detalle" in titulo_limpio:
+        return "▥"
+
+    return "▣"
+
+
+def section_header(titulo, subtitulo=""):
+    subtitulo_html = f"<p>{texto_seguro(subtitulo)}</p>" if subtitulo else ""
+    icono = obtener_icono_seccion(titulo)
+    st.markdown(
+        f"""
+        <div class="section-title-wrap">
+            <h3><span class="section-icon">{icono}</span>{texto_seguro(titulo)}</h3>
+            {subtitulo_html}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def cutoff_strip(fecha_actual, fecha_anterior=None):
+    fecha_actual_txt = fecha_actual.strftime("%d-%m-%Y") if fecha_actual else "Sin corte"
+    if fecha_anterior is not None:
+        fecha_anterior_txt = fecha_anterior.strftime("%d-%m-%Y")
+        comparacion = f"<span class='cutoff-pill'>Comparativo: {fecha_anterior_txt}</span>"
+    else:
+        comparacion = "<span class='cutoff-pill'>Sin corte anterior</span>"
+
+    st.markdown(
+        f"""
+        <div class="cutoff-strip">
+            <span class="cutoff-pill">Corte visualizado: {fecha_actual_txt}</span>
+            {comparacion}
+            <span>Vista operativa para control semanal de gestión administrativa STA.</span>
+        </div>
+        <div class="process-flow">
+            <div class="process-chip"><span>1</span>Cargar corte</div>
+            <div class="process-chip"><span>2</span>Revisar estado</div>
+            <div class="process-chip"><span>3</span>Detectar deterioros</div>
+            <div class="process-chip"><span>4</span>Gestionar prioridad</div>
+            <div class="process-chip"><span>5</span>Bajar al detalle</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def selector_chips_sidebar(titulo, opciones, key, expanded=True):
+    opciones_limpias = []
+
+    for opcion in opciones:
+        if pd.isna(opcion):
+            continue
+
+        opcion_texto = str(opcion).strip()
+
+        if opcion_texto == "":
+            continue
+
+        opciones_limpias.append(opcion_texto)
+
+    opciones_limpias = list(dict.fromkeys(opciones_limpias))
+
+    with st.expander(titulo, expanded=expanded):
+        if not opciones_limpias:
+            st.caption("Sin opciones disponibles.")
+            return []
+
+        if hasattr(st, "pills"):
+            seleccion = st.pills(
+                "Opciones",
+                opciones_limpias,
+                selection_mode="multi",
+                key=key,
+                label_visibility="collapsed"
+            )
+        else:
+            seleccion = st.multiselect(
+                "Opciones",
+                opciones_limpias,
+                key=key,
+                label_visibility="collapsed"
+            )
+
+    if seleccion is None:
+        return []
+
+    if isinstance(seleccion, str):
+        return [seleccion]
+
+    return list(seleccion)
+
+
+def crear_figura_tramos(resumen_tramos):
+    fig_tramos = px.bar(
+        resumen_tramos,
+        x="Tramo",
+        y="Productos",
+        color="Estado Control",
+        text="Productos",
+        title="Distribución por antigüedad y estado",
+        color_discrete_map=COLOR_ESTADOS
+    )
+
+    fig_tramos.update_traces(textposition="outside", marker_line_width=0)
+    fig_tramos.update_layout(
+        title=dict(text="Distribución por antigüedad y estado", x=0.02, xanchor="left"),
+        height=385,
+        xaxis_title="Tramo de antigüedad",
+        yaxis_title="Productos",
+        legend_title_text="Estado",
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#111827", size=12),
+        title_font=dict(size=17, color="#111827"),
+        yaxis=dict(gridcolor="#E5E7EB"),
+        margin=dict(l=20, r=20, t=52, b=20)
+    )
+
+    return fig_tramos
+
+
+
+def crear_figura_atrasos_admin(resumen_admin):
+    if resumen_admin.empty:
+        return None
+
+    columnas_necesarias = ["Administrativo", "Atrasado", "Critico"]
+    if any(columna not in resumen_admin.columns for columna in columnas_necesarias):
+        return None
+
+    datos = resumen_admin.copy()
+    datos["Crítico"] = datos["Critico"]
+    datos["Total gestión prioritaria"] = datos["Atrasado"] + datos["Crítico"]
+    datos = datos[datos["Total gestión prioritaria"] > 0].copy()
+
+    if datos.empty:
+        return None
+
+    columnas_orden = ["Crítico", "Atrasado", "CP_60", "Total"]
+    columnas_orden = [columna for columna in columnas_orden if columna in datos.columns]
+    datos = datos.sort_values(columnas_orden, ascending=False).head(10)
+
+    fig = px.bar(
+        datos,
+        x=["Atrasado", "Crítico"],
+        y="Administrativo",
+        orientation="h",
+        title="Atrasados y críticos por administrativo",
+        labels={
+            "value": "Productos",
+            "Administrativo": "Administrativo",
+            "variable": "Estado",
+        },
+        color_discrete_map={
+            "Atrasado": COLOR_ESTADOS["Atrasado"],
+            "Crítico": COLOR_ESTADOS["Crítico"],
+        },
+    )
+
+    fig.update_traces(
+        texttemplate="%{x}",
+        textposition="inside",
+        insidetextanchor="middle",
+        marker_line_width=0,
+    )
+
+    fig.update_layout(
+        title=dict(text="Atrasados y críticos por administrativo", x=0.02, xanchor="left"),
+        height=325,
+        barmode="stack",
+        xaxis_title="Productos",
+        yaxis_title="Administrativo",
+        yaxis=dict(categoryorder="total ascending"),
+        plot_bgcolor="rgba(0,0,0,0)",
+        paper_bgcolor="rgba(0,0,0,0)",
+        font=dict(color="#111827", size=12),
+        title_font=dict(size=17, color="#111827"),
+        xaxis=dict(gridcolor="#E5E7EB", rangemode="tozero"),
+        legend_title_text="Estado",
+        margin=dict(l=20, r=40, t=52, b=20)
+    )
+
+    return fig
+
+
+def generar_prioridades_operativas(resumen_admin, tabla_sta, tabla_marca, resumen_actual, movimientos):
+    prioridades = []
+
+    if not resumen_admin.empty:
+        foco_admin = resumen_admin.sort_values(
+            ["Critico", "Atrasado", "CP_60", "Seguimiento", "Total"],
+            ascending=False
+        ).iloc[0]
+
+        prioridades.append(
+            f"<span class='priority-label'>Administrativo:</span> revisar primero a {texto_seguro(foco_admin['Administrativo'])}. "
+            f"Concentra {formato_numero(foco_admin['Critico'])} críticos, "
+            f"{formato_numero(foco_admin['Atrasado'])} atrasados y "
+            f"{formato_pesos(foco_admin['CP_60'])} de CP sobre 60 días."
+        )
+
+    if not tabla_sta.empty:
+        foco_sta = tabla_sta.sort_values(["Productos", "CP"], ascending=False).iloc[0]
+        prioridades.append(
+            f"<span class='priority-label'>STA:</span> hacer seguimiento a {texto_seguro(foco_sta['STA'])}. "
+            f"Mantiene {formato_numero(foco_sta['Productos'])} productos sobre 60 días "
+            f"y {formato_pesos(foco_sta['CP'])} asociados."
+        )
+
+    if not tabla_marca.empty:
+        foco_marca = tabla_marca.sort_values(["Productos", "CP"], ascending=False).iloc[0]
+        prioridades.append(
+            f"<span class='priority-label'>Marca:</span> revisar casos de {texto_seguro(foco_marca['Marca'])}. "
+            f"Registra {formato_numero(foco_marca['Productos'])} productos sobre 60 días "
+            f"y {formato_pesos(foco_marca['CP'])} asociados."
+        )
+
+    empeoraron = len(movimientos.get("Empeoraron de tramo", pd.DataFrame()))
+    criticos = resumen_actual.get("Productos >120 días", 0)
+
+    if empeoraron > 0:
+        prioridades.append(
+            f"<span class='priority-label'>Deterioro:</span> controlar {formato_numero(empeoraron)} productos que empeoraron de tramo. "
+            "Revisar causa y definir gestión antes de que aumente el bloque crítico."
+        )
+    elif criticos > 0:
+        prioridades.append(
+            f"<span class='priority-label'>Críticos:</span> mantener gestión activa sobre {formato_numero(criticos)} productos sobre 120 días. "
+            "Solicitar respuesta, cierre o escalamiento según corresponda."
+        )
+
+    if not prioridades:
+        prioridades.append("Sin focos operativos relevantes bajo el filtro actual.")
+
+    return prioridades[:4]
+
+
+def mostrar_prioridades_operativas(prioridades):
+    items = "".join([f"<div class='priority-item'>{item}</div>" for item in prioridades])
+    st.markdown(
+        f"""
+        <div class="priority-box">
+            <div class="priority-title">Prioridad de gestión semanal</div>
+            {items}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+def clasificar_prioridad_operativa(fila):
+    estado = fila.get("Estado Control", "")
+    dias = fila.get("Días Proceso", 0)
+    cp = fila.get("CP", 0)
+
+    if estado == "Crítico" and dias >= 180:
+        return "Alta crítica"
+    if estado == "Crítico":
+        return "Crítica"
+    if estado == "Atrasado" and cp > 0:
+        return "Atrasada con CP"
+    if estado == "Atrasado":
+        return "Atrasada"
+    return "Revisión"
+
+
+def accion_sugerida_prioridad(fila):
+    estado = fila.get("Estado Control", "")
+    dias = fila.get("Días Proceso", 0)
+    cp = fila.get("CP", 0)
+
+    if estado == "Crítico" and dias >= 180:
+        return "Escalar y cerrar definición"
+    if estado == "Crítico":
+        return "Gestionar respuesta o salida STA"
+    if estado == "Atrasado" and cp > 0:
+        return "Solicitar avance y priorizar por CP"
+    if estado == "Atrasado":
+        return "Solicitar avance y fecha de resolución"
+
+    return "Revisar"
+
+
+def preparar_prioridad_semanal(df_base):
+    columnas_prioridad = [
+        "Prioridad",
+        "Acción sugerida",
+        "Administrativo",
+        "Estado Control",
+        "Tramo",
+        "Días Proceso",
+        "CP",
+        "STA",
+        "Marca",
+        "Id Ficha",
+        "Id Producto",
+        "Serie",
+        "Descripción",
+    ]
+
+    prioridad = df_base[df_base["Estado Control"].isin(["Atrasado", "Crítico"])].copy()
+
+    if prioridad.empty:
+        return pd.DataFrame(columns=columnas_prioridad)
+
+    prioridad["Prioridad"] = prioridad.apply(clasificar_prioridad_operativa, axis=1)
+    prioridad["Acción sugerida"] = prioridad.apply(accion_sugerida_prioridad, axis=1)
+    prioridad["Orden prioridad"] = prioridad["Estado Control"].map({"Crítico": 2, "Atrasado": 1}).fillna(0)
+
+    prioridad = prioridad.sort_values(
+        ["Orden prioridad", "Días Proceso", "CP"],
+        ascending=[False, False, False]
+    )
+
+    columnas_prioridad = [col for col in columnas_prioridad if col in prioridad.columns]
+    return prioridad[columnas_prioridad].head(40)
+
+
+def generar_resumen_movimiento_operativo(mov_admin, movimientos):
+    if mov_admin.empty:
+        return "No hay movimientos relevantes por administrativo bajo el filtro actual."
+
+    empeoraron_total = len(movimientos.get("Empeoraron de tramo", pd.DataFrame()))
+    pasaron_60_total = len(movimientos.get("Pasaron >60", pd.DataFrame()))
+    pasaron_120_total = len(movimientos.get("Pasaron >120", pd.DataFrame()))
+    siguen_criticos_total = len(movimientos.get("Siguen críticos", pd.DataFrame()))
+
+    partes = []
+
+    if empeoraron_total > 0 and "Empeoraron de tramo" in mov_admin.columns:
+        foco_empeora = mov_admin.sort_values("Empeoraron de tramo", ascending=False).iloc[0]
+        partes.append(
+            f"Se detectan {formato_numero(empeoraron_total)} productos que empeoraron de tramo; "
+            f"el mayor foco está en {foco_empeora['Administrativo']} "
+            f"({formato_numero(foco_empeora['Empeoraron de tramo'])})."
+        )
+
+    if pasaron_60_total > 0 and "Pasaron >60" in mov_admin.columns:
+        foco_60 = mov_admin.sort_values("Pasaron >60", ascending=False).iloc[0]
+        partes.append(
+            f"Pasaron a más de 60 días {formato_numero(pasaron_60_total)} productos; "
+            f"revisar primero {foco_60['Administrativo']} "
+            f"({formato_numero(foco_60['Pasaron >60'])})."
+        )
+
+    if pasaron_120_total > 0 and "Pasaron >120" in mov_admin.columns:
+        foco_120 = mov_admin.sort_values("Pasaron >120", ascending=False).iloc[0]
+        partes.append(
+            f"Pasaron a condición crítica {formato_numero(pasaron_120_total)} productos; "
+            f"validar gestión con {foco_120['Administrativo']} "
+            f"({formato_numero(foco_120['Pasaron >120'])})."
+        )
+
+    if siguen_criticos_total > 0 and "Siguen críticos" in mov_admin.columns:
+        foco_critico = mov_admin.sort_values("Siguen críticos", ascending=False).iloc[0]
+        partes.append(
+            f"Siguen críticos {formato_numero(siguen_criticos_total)} productos; "
+            f"principal responsable de gestión: {foco_critico['Administrativo']} "
+            f"({formato_numero(foco_critico['Siguen críticos'])})."
+        )
+
+    if not partes:
+        mayor_reduccion = mov_admin.sort_values("Neto", ascending=True).iloc[0]
+        mayor_aumento = mov_admin.sort_values("Neto", ascending=False).iloc[0]
+
+        if mayor_reduccion["Neto"] < 0 or mayor_aumento["Neto"] > 0:
+            return (
+                f"No hay deterioros relevantes bajo el filtro actual. "
+                f"Mayor reducción neta: {mayor_reduccion['Administrativo']} ({formato_numero(mayor_reduccion['Neto'])}); "
+                f"mayor aumento neto: {mayor_aumento['Administrativo']} (+{formato_numero(mayor_aumento['Neto'])})."
+            )
+
+        return "Los movimientos no muestran deterioros ni variaciones netas relevantes bajo el filtro actual."
+
+    return " ".join(partes)
+
+
+def generar_postits_operativos(
+    resumen_actual,
+    resumen_anterior,
+    movimientos,
+    resumen_admin,
+    tabla_sta,
+    tabla_marca,
+    fecha_anterior,
+    fecha_corte
+):
+    total_actual = resumen_actual["Total productos"]
+    cp_total_actual = resumen_actual["CP total"]
+    productos_60 = resumen_actual["Productos >60 días"]
+    productos_120 = resumen_actual["Productos >120 días"]
+    cp_60 = resumen_actual["CP >60 días"]
+
+    pct_60 = formato_porcentaje(productos_60 / total_actual) if total_actual > 0 else "0,0%"
+    pct_120 = formato_porcentaje(productos_120 / total_actual) if total_actual > 0 else "0,0%"
+    pct_cp_60 = formato_porcentaje(cp_60 / cp_total_actual) if cp_total_actual > 0 else "0,0%"
+
+    nuevos = len(movimientos.get("Nuevos", pd.DataFrame()))
+    salidos = len(movimientos.get("Salidos", pd.DataFrame()))
+    empeoraron = len(movimientos.get("Empeoraron de tramo", pd.DataFrame()))
+    pasaron_60 = len(movimientos.get("Pasaron >60", pd.DataFrame()))
+    pasaron_120 = len(movimientos.get("Pasaron >120", pd.DataFrame()))
+    siguen_criticos = len(movimientos.get("Siguen críticos", pd.DataFrame()))
+
+    postits = []
+
+    if resumen_anterior is not None:
+        total_anterior = resumen_anterior["Total productos"]
+        neto = total_actual - total_anterior
+        clase_movimiento = "success" if salidos >= nuevos else "warning"
+        texto_movimiento = (
+            f"Ingresaron {formato_numero(nuevos)} y salieron {formato_numero(salidos)} productos; "
+            f"variación neta {formato_numero(neto)}. Para gestión semanal, revisar "
+            f"{formato_numero(empeoraron)} que empeoraron de tramo, "
+            f"{formato_numero(pasaron_60)} que pasaron a >60 días y "
+            f"{formato_numero(pasaron_120)} que pasaron a >120 días."
+        )
+    else:
+        clase_movimiento = "info"
+        texto_movimiento = (
+            "Primer corte registrado. La lectura de movimiento semanal se activará cuando exista un corte anterior comparable."
+        )
+
+    postits.append({
+        "titulo": "Movimiento semanal",
+        "clase": clase_movimiento,
+        "texto": texto_movimiento
+    })
+
+    if productos_60 > 0:
+        texto_riesgo = (
+            f"El bloque de gestión prioritaria reúne {formato_numero(productos_60)} productos sobre 60 días "
+            f"({pct_60}), con {formato_pesos(cp_60)} comprometidos ({pct_cp_60} del CP). "
+            f"Dentro de ese universo, {formato_numero(productos_120)} están sobre 120 días ({pct_120}) "
+            f"y {formato_numero(siguen_criticos)} se mantienen críticos."
+        )
+        clase_riesgo = "danger" if productos_120 > 0 else "warning"
+    else:
+        texto_riesgo = "No hay productos sobre 60 días bajo el filtro actual. Mantener control preventivo en seguimiento."
+        clase_riesgo = "success"
+
+    postits.append({
+        "titulo": "Riesgo operativo",
+        "clase": clase_riesgo,
+        "texto": texto_riesgo
+    })
+
+    acciones = []
+
+    atrasados_61_120 = max(productos_60 - productos_120, 0)
+
+    if productos_120 > 0:
+        acciones.append(
+            f"revisar primero {formato_numero(productos_120)} productos críticos sobre 120 días"
+        )
+
+    if atrasados_61_120 > 0:
+        acciones.append(
+            f"luego gestionar {formato_numero(atrasados_61_120)} atrasados entre 61 y 120 días"
+        )
+
+    if empeoraron > 0:
+        acciones.append(
+            f"validar {formato_numero(empeoraron)} productos que empeoraron de tramo"
+        )
+
+    if pasaron_60 > 0:
+        acciones.append(
+            f"tomar {formato_numero(pasaron_60)} productos que pasaron a más de 60 días antes de que lleguen a crítico"
+        )
+
+    if siguen_criticos > 0:
+        acciones.append(
+            f"escalar o cerrar definición para {formato_numero(siguen_criticos)} productos que siguen críticos"
+        )
+
+    if acciones:
+        texto_accion = "Para esta semana: " + "; ".join(acciones[:4]) + ". Usar filtros de administrativo, STA y marca para bajar al detalle."
+        clase_accion = "danger" if productos_120 > 0 else "warning"
+    else:
+        texto_accion = "Sin acciones urgentes bajo el filtro actual. Mantener control preventivo sobre productos en seguimiento."
+        clase_accion = "success"
+
+    postits.append({
+        "titulo": "Gestión sugerida",
+        "clase": clase_accion,
+        "texto": texto_accion
+    })
+
+    return postits
+
+
 # --------------------------------------------------
 # FUNCIONES DE HISTÓRICO CENTRAL GOOGLE SHEETS
 # --------------------------------------------------
@@ -499,6 +1832,8 @@ def normalizar_historico(historico):
 
     for columna in ["Llave", "Id Ficha", "Id Producto", "Serie", "Descripción", "Marca", "Familia", "Administrativo", "STA", "Proveedor"]:
         historico[columna] = historico[columna].fillna("").astype(str).str.strip()
+
+    historico["Administrativo"] = historico["Administrativo"].apply(normalizar_nombre_persona)
 
     historico.loc[historico["STA"].isin(["", "651", "nan", "None"]), "STA"] = "Sin STA"
 
@@ -675,7 +2010,7 @@ def preparar_dataframe_sta(df_base):
 
     df_preparado["CP"] = df_preparado["CP"].apply(limpiar_cp)
 
-    df_preparado["Administrativo"] = df_preparado["Usuario Emisor"].fillna("Sin asignar").astype(str).str.strip()
+    df_preparado["Administrativo"] = df_preparado["Usuario Emisor"].apply(normalizar_nombre_persona)
     df_preparado["Marca"] = df_preparado["Marca"].fillna("Sin marca").astype(str).str.strip()
     df_preparado["STA"] = df_preparado["Sta"].fillna("Sin STA").astype(str).str.strip()
 
@@ -849,12 +2184,18 @@ def tabla_movimiento_desde_merge(df_merge):
 def calcular_movimientos(df_actual, df_anterior):
     movimientos = {}
 
+    nombres_base = [
+        "Nuevos",
+        "Salidos",
+        "Pasaron >60",
+        "Pasaron >120",
+        "Siguen críticos",
+        "Empeoraron de tramo"
+    ]
+
     if df_anterior is None or df_anterior.empty:
-        movimientos["Nuevos"] = pd.DataFrame()
-        movimientos["Salidos"] = pd.DataFrame()
-        movimientos["Pasaron >60"] = pd.DataFrame()
-        movimientos["Pasaron >120"] = pd.DataFrame()
-        movimientos["Siguen críticos"] = pd.DataFrame()
+        for nombre in nombres_base:
+            movimientos[nombre] = pd.DataFrame()
         return movimientos
 
     actual = df_actual.copy()
@@ -880,6 +2221,7 @@ def calcular_movimientos(df_actual, df_anterior):
         pasaron_60 = pd.DataFrame()
         pasaron_120 = pd.DataFrame()
         siguen_criticos = pd.DataFrame()
+        empeoraron = pd.DataFrame()
     else:
         pasaron_60 = comunes[
             (comunes["Días Proceso_anterior"] <= 60)
@@ -896,11 +2238,26 @@ def calcular_movimientos(df_actual, df_anterior):
             & (comunes["Días Proceso_actual"] > 120)
         ].copy()
 
+        severidad = {
+            "Normal": 0,
+            "Seguimiento": 1,
+            "Atrasado": 2,
+            "Crítico": 3
+        }
+
+        comunes["Severidad anterior"] = comunes["Estado Control_anterior"].map(severidad).fillna(0)
+        comunes["Severidad actual"] = comunes["Estado Control_actual"].map(severidad).fillna(0)
+
+        empeoraron = comunes[
+            comunes["Severidad actual"] > comunes["Severidad anterior"]
+        ].copy()
+
     movimientos["Nuevos"] = tabla_simple(nuevos)
     movimientos["Salidos"] = tabla_simple(salidos)
     movimientos["Pasaron >60"] = tabla_movimiento_desde_merge(pasaron_60)
     movimientos["Pasaron >120"] = tabla_movimiento_desde_merge(pasaron_120)
     movimientos["Siguen críticos"] = tabla_movimiento_desde_merge(siguen_criticos)
+    movimientos["Empeoraron de tramo"] = tabla_movimiento_desde_merge(empeoraron)
 
     return movimientos
 
@@ -911,7 +2268,8 @@ def resumen_movimientos_por_dimension(movimientos, dimension):
         "Salidos",
         "Pasaron >60",
         "Pasaron >120",
-        "Siguen críticos"
+        "Siguen críticos",
+        "Empeoraron de tramo"
     ]
 
     valores_dimension = set()
@@ -930,7 +2288,8 @@ def resumen_movimientos_por_dimension(movimientos, dimension):
                 "Neto",
                 "Pasaron >60",
                 "Pasaron >120",
-                "Siguen críticos"
+                "Siguen críticos",
+                "Empeoraron de tramo"
             ]
         )
 
@@ -964,12 +2323,13 @@ def resumen_movimientos_por_dimension(movimientos, dimension):
             "Neto",
             "Pasaron >60",
             "Pasaron >120",
-            "Siguen críticos"
+            "Siguen críticos",
+            "Empeoraron de tramo"
         ]
     ]
 
     resumen = resumen.sort_values(
-        ["Siguen críticos", "Pasaron >120", "Pasaron >60", "Nuevos"],
+        ["Siguen críticos", "Empeoraron de tramo", "Pasaron >120", "Pasaron >60", "Nuevos"],
         ascending=False
     )
 
@@ -1127,7 +2487,7 @@ def crear_excel_descarga(
     salida = io.BytesIO()
 
     with pd.ExcelWriter(salida, engine="openpyxl") as writer:
-        lectura_df.to_excel(writer, index=False, sheet_name="Lectura ejecutiva")
+        lectura_df.to_excel(writer, index=False, sheet_name="Lectura operativa")
         resumen_df.to_excel(writer, index=False, sheet_name="Resumen")
         estado_definiciones_df.to_excel(writer, index=False, sheet_name="Estados control")
         admin_df.to_excel(writer, index=False, sheet_name="Administrativos")
@@ -1185,12 +2545,30 @@ orden_estado = [
 
 estado_definiciones = obtener_definicion_estados()
 
-st.sidebar.header("Configuración")
+# Contenedores creados en este orden para que los filtros queden arriba
+# y la configuración/histórico central queden al final del panel lateral.
+st.sidebar.header("Filtros")
+st.sidebar.caption("Selecciona opciones con los botones. Puedes combinar varios filtros.")
+filtros_sidebar = st.sidebar.container()
 
-modo_acceso = st.sidebar.radio(
-    "Modo de acceso",
-    ["Supervisor", "Administrador"],
-    index=0
+st.sidebar.divider()
+st.sidebar.header("Búsqueda directa")
+busqueda_sidebar = st.sidebar.container()
+
+st.sidebar.divider()
+config_sidebar = st.sidebar.expander("Configuración y carga de cortes", expanded=False)
+
+st.sidebar.divider()
+historico_sidebar = st.sidebar.expander("Histórico central", expanded=False)
+
+st.sidebar.markdown(
+    """
+    <div class="developer-credit">
+        <strong>Desarrollado por Hugo Morales</strong><br>
+        <span>Procesos y Calidad · RMA · PCFactory</span>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
 historico = cargar_historico()
@@ -1198,81 +2576,87 @@ historico = cargar_historico()
 df_cargado = None
 fecha_corte_cargado = None
 
-if modo_acceso == "Administrador":
-    st.sidebar.divider()
-    st.sidebar.subheader("Carga de cortes")
-
-    clave_ingresada = st.sidebar.text_input(
-        "Clave administrador",
-        type="password"
+with config_sidebar:
+    modo_acceso = st.radio(
+        "Modo de acceso",
+        ["Supervisor", "Administrador"],
+        index=0
     )
 
-    clave_admin = st.secrets["app"].get("admin_password", "")
+    if modo_acceso == "Administrador":
+        st.subheader("Carga de cortes")
 
-    if clave_ingresada == "":
-        st.sidebar.info("Ingresa la clave para habilitar la carga de cortes.")
-    elif clave_ingresada != clave_admin:
-        st.sidebar.error("Clave incorrecta. Se mantiene vista de solo lectura.")
-    else:
-        st.sidebar.success("Modo administrador habilitado.")
-
-        fecha_admin = st.sidebar.date_input(
-            "Fecha de corte del reporte",
-            value=date.today()
+        clave_ingresada = st.text_input(
+            "Clave administrador",
+            type="password"
         )
 
-        archivo = st.sidebar.file_uploader(
-            "Carga aquí el archivo Excel del reporte STA",
-            type=["xlsx"]
-        )
+        clave_admin = st.secrets["app"].get("admin_password", "")
 
-        if archivo is not None:
-            try:
-                df_cargado = leer_reporte_sta(archivo)
-                fecha_corte_cargado = fecha_admin
-
-                st.sidebar.success(
-                    f"Archivo cargado: {formato_numero(len(df_cargado))} productos."
-                )
-
-                if st.sidebar.button("Guardar corte en histórico central"):
-                    registrar_corte(df_cargado, fecha_admin)
-                    st.sidebar.success(
-                        f"Corte {fecha_admin.strftime('%d-%m-%Y')} guardado correctamente."
-                    )
-                    st.rerun()
-
-            except Exception as error:
-                st.error("No se pudo procesar el archivo cargado.")
-                st.exception(error)
-                st.stop()
+        if clave_ingresada == "":
+            st.info("Ingresa la clave para habilitar la carga de cortes.")
+        elif clave_ingresada != clave_admin:
+            st.error("Clave incorrecta. Se mantiene vista de solo lectura.")
         else:
-            st.sidebar.info("Carga un Excel solo cuando necesites registrar un nuevo corte.")
+            st.success("Modo administrador habilitado.")
 
-        st.sidebar.divider()
-        st.sidebar.subheader("Mantenimiento")
-        confirmacion_limpieza = st.sidebar.text_input(
-            "Para limpiar el histórico central, escribe LIMPIAR",
-            value=""
-        )
+            fecha_admin = st.date_input(
+                "Fecha de corte del reporte",
+                value=date.today()
+            )
 
-        if st.sidebar.button("Limpiar histórico central"):
-            if confirmacion_limpieza == "LIMPIAR":
-                limpiar_historico_central()
-                st.sidebar.success("Histórico central limpiado correctamente.")
-                st.rerun()
+            archivo = st.file_uploader(
+                "Carga aquí el archivo Excel del reporte STA",
+                type=["xlsx"]
+            )
+
+            if archivo is not None:
+                try:
+                    df_cargado = leer_reporte_sta(archivo)
+                    fecha_corte_cargado = fecha_admin
+
+                    st.success(
+                        f"Archivo cargado: {formato_numero(len(df_cargado))} productos."
+                    )
+
+                    if st.button("Guardar corte en histórico central"):
+                        registrar_corte(df_cargado, fecha_admin)
+                        st.success(
+                            f"Corte {fecha_admin.strftime('%d-%m-%Y')} guardado correctamente."
+                        )
+                        st.rerun()
+
+                except Exception as error:
+                    st.error("No se pudo procesar el archivo cargado.")
+                    st.exception(error)
+                    st.stop()
             else:
-                st.sidebar.error("Debes escribir LIMPIAR para confirmar.")
+                st.info("Carga un Excel solo cuando necesites registrar un nuevo corte.")
 
-st.sidebar.divider()
-st.sidebar.header("Histórico central")
+            st.divider()
+            st.subheader("Mantenimiento")
+            confirmacion_limpieza = st.text_input(
+                "Para limpiar el histórico central, escribe LIMPIAR",
+                value=""
+            )
 
-if historico.empty:
-    st.sidebar.info("Aún no hay cortes registrados en Google Sheets.")
-else:
-    cortes_registrados = sorted(historico["Fecha Corte"].dropna().unique())
-    st.sidebar.success(f"Cortes registrados: {len(cortes_registrados)}")
-    st.sidebar.write([fecha.strftime("%d-%m-%Y") for fecha in cortes_registrados])
+            if st.button("Limpiar histórico central"):
+                if confirmacion_limpieza == "LIMPIAR":
+                    limpiar_historico_central()
+                    st.success("Histórico central limpiado correctamente.")
+                    st.rerun()
+                else:
+                    st.error("Debes escribir LIMPIAR para confirmar.")
+    else:
+        st.caption("Vista de solo lectura para supervisores.")
+
+with historico_sidebar:
+    if historico.empty:
+        st.info("Aún no hay cortes registrados en Google Sheets.")
+    else:
+        cortes_registrados = sorted(historico["Fecha Corte"].dropna().unique())
+        st.success(f"Cortes registrados: {len(cortes_registrados)}")
+        st.write([fecha.strftime("%d-%m-%Y") for fecha in cortes_registrados])
 
 if df_cargado is not None:
     df = df_cargado.copy()
@@ -1291,44 +2675,66 @@ else:
         )
         st.stop()
 
-st.caption(f"Corte visualizado: {fecha_corte.strftime('%d-%m-%Y')}")
-
-
 # --------------------------------------------------
 # FILTROS
 # --------------------------------------------------
 
-st.sidebar.divider()
-st.sidebar.header("Filtros")
+filtro_keys = [
+    "filtro_admin",
+    "filtro_tramo",
+    "filtro_estado",
+    "filtro_sta",
+    "filtro_marca",
+    "busqueda_texto",
+]
 
-admin_seleccionado = st.sidebar.multiselect(
-    "Administrativo",
-    sorted(df["Administrativo"].unique())
-)
+with filtros_sidebar:
+    if st.button("Limpiar filtros", use_container_width=True):
+        for key in filtro_keys:
+            if key in st.session_state:
+                del st.session_state[key]
+        st.rerun()
 
-sta_seleccionado = st.sidebar.multiselect(
-    "STA",
-    sorted(df["STA"].unique())
-)
+    admin_seleccionado = selector_chips_sidebar(
+        "Administrativo",
+        sorted(df["Administrativo"].unique()),
+        key="filtro_admin",
+        expanded=True
+    )
 
-marca_seleccionada = st.sidebar.multiselect(
-    "Marca",
-    sorted(df["Marca"].unique())
-)
+    tramo_seleccionado = selector_chips_sidebar(
+        "Tramo de antigüedad",
+        orden_tramos,
+        key="filtro_tramo",
+        expanded=True
+    )
 
-tramo_seleccionado = st.sidebar.multiselect(
-    "Tramo antigüedad",
-    orden_tramos
-)
+    estado_seleccionado = selector_chips_sidebar(
+        "Estado control",
+        orden_estado,
+        key="filtro_estado",
+        expanded=True
+    )
 
-estado_seleccionado = st.sidebar.multiselect(
-    "Estado control",
-    orden_estado
-)
+    sta_seleccionado = selector_chips_sidebar(
+        "STA",
+        sorted(df["STA"].unique()),
+        key="filtro_sta",
+        expanded=False
+    )
 
-busqueda = st.sidebar.text_input(
-    "Buscar por ficha, producto, serie o descripción"
-)
+    marca_seleccionada = selector_chips_sidebar(
+        "Marca",
+        sorted(df["Marca"].unique()),
+        key="filtro_marca",
+        expanded=False
+    )
+
+with busqueda_sidebar:
+    busqueda = st.text_input(
+        "Buscar por ficha, producto, serie o descripción",
+        key="busqueda_texto"
+    )
 
 
 df_filtrado = aplicar_filtros(
@@ -1380,12 +2786,11 @@ else:
     resumen_anterior = None
 
 
-st.markdown("### Resumen general")
-
-if resumen_anterior is not None:
-    st.caption(f"Comparación contra corte anterior: {fecha_anterior.strftime('%d-%m-%Y')}")
-else:
-    st.caption("Sin corte anterior registrado para comparar.")
+cutoff_strip(fecha_corte, fecha_anterior if resumen_anterior is not None else None)
+section_header(
+    "Resumen operativo del corte",
+    "Indicadores base del stock STA filtrado y variación contra el corte anterior."
+)
 
 
 participacion_seguimiento = f"{formato_porcentaje(resumen_actual['Seguimiento'] / resumen_actual['Total productos'])} del stock" if resumen_actual["Total productos"] > 0 else "0,0% del stock"
@@ -1461,7 +2866,7 @@ with c5:
 with c6:
     anterior = resumen_anterior["CP >60 días"] if resumen_anterior else None
     kpi_card(
-        "CP atrasado + crítico",
+        "CP sobre 60 días",
         formato_pesos(resumen_actual["CP >60 días"]),
         nota_kpi(
             participacion_cp_60,
@@ -1563,7 +2968,7 @@ tabla_sta = (
         CP=("CP", "sum")
     )
     .reset_index()
-    .sort_values("Productos", ascending=False)
+    .sort_values(["Productos", "CP"], ascending=False)
     .head(10)
 )
 
@@ -1575,7 +2980,7 @@ tabla_marca = (
         CP=("CP", "sum")
     )
     .reset_index()
-    .sort_values("Productos", ascending=False)
+    .sort_values(["Productos", "CP"], ascending=False)
     .head(10)
 )
 
@@ -1595,190 +3000,234 @@ lectura_exportar = pd.DataFrame({
     "Lectura": list(lecturas.values())
 })
 
+postits_operativos = generar_postits_operativos(
+    resumen_actual=resumen_actual,
+    resumen_anterior=resumen_anterior,
+    movimientos=movimientos,
+    resumen_admin=resumen_admin,
+    tabla_sta=tabla_sta,
+    tabla_marca=tabla_marca,
+    fecha_anterior=fecha_anterior,
+    fecha_corte=fecha_corte
+)
+
+prioridades_operativas = generar_prioridades_operativas(
+    resumen_admin=resumen_admin,
+    tabla_sta=tabla_sta,
+    tabla_marca=tabla_marca,
+    resumen_actual=resumen_actual,
+    movimientos=movimientos
+)
+
+fig_atrasos_admin = crear_figura_atrasos_admin(resumen_admin)
+prioridad_semanal = preparar_prioridad_semanal(df_filtrado)
+
 
 # --------------------------------------------------
-# VISUALIZACIONES
+# CONTROL OPERATIVO SIEMPRE VISIBLE
 # --------------------------------------------------
 
 st.divider()
+section_header(
+    "Control operativo semanal",
+    "Vista de trabajo: prioridad, cambios del corte, antigüedad y acciones para la gestión administrativa STA."
+)
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+mostrar_prioridades_operativas(prioridades_operativas)
+
+col_visual, col_lectura = st.columns([1.2, 0.8])
+
+with col_visual:
+    st.markdown("#### Distribución por antigüedad")
+    st.plotly_chart(crear_figura_tramos(resumen_tramos), use_container_width=True)
+
+    if fig_atrasos_admin is not None:
+        st.plotly_chart(fig_atrasos_admin, use_container_width=True)
+
+    st.markdown("##### Semáforo operativo")
+    st.dataframe(
+        estilo_tabla_operativa(
+            preparar_display_pesos(
+                resumen_tramos,
+                columnas_pesos=["CP"],
+                columnas_porcentaje=["% productos", "% CP"]
+            )
+        ),
+        use_container_width=True,
+        hide_index=True
+    )
+
+    with st.expander("Ver criterio de clasificación de estados", expanded=False):
+        st.dataframe(
+            estilo_tabla_operativa(estado_definiciones),
+            use_container_width=True,
+            hide_index=True
+        )
+
+with col_lectura:
+    st.markdown("#### Lectura operativa")
+
+    for postit in postits_operativos:
+        postit_card(
+            titulo=postit["titulo"],
+            texto=postit["texto"],
+            clase=postit.get("clase", "info")
+        )
+
+
+# --------------------------------------------------
+# MÓDULOS DE ANÁLISIS DETALLADO
+# --------------------------------------------------
+
+st.divider()
+section_header(
+    "Módulos de trabajo",
+    "Revisión operativa por administrativo, cambios del corte, detalle descargable e histórico semanal."
+)
+
+tab1, tab2, tab3, tab4 = st.tabs(
     [
-        "Lectura ejecutiva",
-        "Resumen visual",
-        "Foco administrativo",
-        "Movimientos semana",
-        "Detalle y descarga",
+        "Administrativos",
+        "Cambios semanales",
+        "Detalle operativo",
         "Histórico"
     ]
 )
 
 
 with tab1:
-    st.markdown("#### Lectura automática del corte")
+    st.markdown("#### Carga y riesgo por administrativo")
+    st.caption("Vista compacta para identificar quién concentra seguimiento, atraso, criticidad y CP asociado.")
 
-    st.info(lecturas["Lectura general"])
-    st.info(lecturas["Lectura de movimientos"])
-    st.warning(lecturas["Lectura de atraso"])
-    st.error(lecturas["Lectura de críticos"])
-    st.success(lecturas["Lectura de focos"])
-
-    st.markdown("#### Definición de estados de control")
-
-    st.dataframe(
-        estado_definiciones,
-        use_container_width=True,
-        hide_index=True
+    tabla_admin = resumen_admin.rename(
+        columns={
+            "Critico": "Crítico",
+            "Sobre_60": ">60 días",
+            "Sobre_120": ">120 días",
+            "CP_Total": "CP total",
+            "CP_60": "CP >60 días",
+            "Max_Dias": "Máx días"
+        }
     )
 
+    columnas_admin_visibles = [
+        "Administrativo",
+        "Total",
+        "Seguimiento",
+        "Atrasado",
+        "Crítico",
+        ">60 días",
+        ">120 días",
+        "CP >60 días",
+        "% atraso"
+    ]
+    columnas_admin_visibles = [col for col in columnas_admin_visibles if col in tabla_admin.columns]
+    tabla_admin_visible = tabla_admin[columnas_admin_visibles].copy()
 
-with tab2:
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([1.15, 0.85])
 
     with col1:
-        fig_tramos = px.bar(
-            resumen_tramos,
-            x="Tramo",
-            y="Productos",
-            color="Estado Control",
-            text="Productos",
-            title="Productos STA por tramo y estado de control",
-            color_discrete_map=COLOR_ESTADOS
-        )
-
-        fig_tramos.update_traces(textposition="outside")
-        fig_tramos.update_layout(
-            height=430,
-            xaxis_title="Tramo",
-            yaxis_title="Productos"
-        )
-
-        st.plotly_chart(fig_tramos, use_container_width=True)
-
-    with col2:
-        st.markdown("#### Semáforo de antigüedad")
-
         st.dataframe(
-            preparar_display_pesos(
-                resumen_tramos,
-                columnas_pesos=["CP"],
-                columnas_porcentaje=["% productos", "% CP"]
+            estilo_tabla_operativa(
+                preparar_display_pesos(
+                    tabla_admin_visible,
+                    columnas_pesos=["CP >60 días"],
+                    columnas_porcentaje=["% atraso"]
+                )
             ),
             use_container_width=True,
             hide_index=True
         )
 
-    st.markdown("#### Definición de estados de control")
+        with st.expander("Ver resumen administrativo completo", expanded=False):
+            st.dataframe(
+                estilo_tabla_operativa(
+                    preparar_display_pesos(
+                        tabla_admin,
+                        columnas_pesos=["CP total", "CP >60 días"],
+                        columnas_porcentaje=["% seguimiento", "% atrasado", "% crítico", "% atraso"]
+                    )
+                ),
+                use_container_width=True,
+                hide_index=True
+            )
 
-    st.dataframe(
-        estado_definiciones,
-        use_container_width=True,
-        hide_index=True
-    )
-
-    col3, col4 = st.columns(2)
-
-    with col3:
-        st.markdown("#### STA con mayor atraso")
-
-        st.dataframe(
-            preparar_display_pesos(tabla_sta, columnas_pesos=["CP"]),
-            use_container_width=True,
-            hide_index=True
+    with col2:
+        resumen_admin_grafico = resumen_admin.rename(columns={"Critico": "Crítico"}).copy()
+        resumen_admin_grafico["Total foco operativo"] = (
+            resumen_admin_grafico["Crítico"]
+            + resumen_admin_grafico["Atrasado"]
+            + resumen_admin_grafico["Seguimiento"]
         )
-
-    with col4:
-        st.markdown("#### Marcas con mayor atraso")
-
-        st.dataframe(
-            preparar_display_pesos(tabla_marca, columnas_pesos=["CP"]),
-            use_container_width=True,
-            hide_index=True
+        resumen_admin_grafico = resumen_admin_grafico.sort_values(
+            ["Crítico", "Atrasado", "Seguimiento", "Total"],
+            ascending=False
         )
-
-
-with tab3:
-    col1, col2 = st.columns([1.2, 1])
-
-    with col1:
-        resumen_admin_grafico = resumen_admin.rename(columns={"Critico": "Crítico"})
 
         fig_admin = px.bar(
             resumen_admin_grafico,
-            x="Administrativo",
-            y=["Seguimiento", "Atrasado", "Crítico"],
-            title="Productos por estado de control y administrativo",
+            x=["Seguimiento", "Atrasado", "Crítico"],
+            y="Administrativo",
+            orientation="h",
+            title="Carga operativa por administrativo",
+            labels={
+                "value": "Productos",
+                "Administrativo": "Administrativo",
+                "variable": "Estado",
+            },
             color_discrete_map=COLOR_ESTADOS
         )
 
+        fig_admin.update_traces(
+            texttemplate="%{x}",
+            textposition="inside",
+            insidetextanchor="middle",
+            marker_line_width=0,
+        )
+
         fig_admin.update_layout(
-            height=430,
-            xaxis_title="Administrativo",
-            yaxis_title="Productos"
+            title=dict(text="Carga operativa por administrativo", x=0.02, xanchor="left"),
+            height=max(360, 48 * len(resumen_admin_grafico) + 125),
+            barmode="stack",
+            xaxis_title="Productos",
+            yaxis_title="Administrativo",
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#111827", size=12),
+            title_font=dict(size=17, color="#111827"),
+            xaxis=dict(gridcolor="#E5E7EB", rangemode="tozero"),
+            yaxis=dict(
+                categoryorder="array",
+                categoryarray=resumen_admin_grafico["Administrativo"].tolist()[::-1]
+            ),
+            margin=dict(l=20, r=20, t=56, b=30),
+            legend_title_text="Estado"
         )
 
         st.plotly_chart(fig_admin, use_container_width=True)
 
-    with col2:
-        st.markdown("#### Resumen por administrativo")
+    st.markdown("#### Prioridad de gestión semanal")
+    st.caption("Lista operativa ordenada por severidad, antigüedad y CP. Incluye Atrasado 61 a 120 días y Crítico sobre 120 días.")
 
-        tabla_admin = resumen_admin.rename(
-            columns={
-                "Critico": "Crítico",
-                "Sobre_60": ">60 días",
-                "Sobre_120": ">120 días",
-                "CP_Total": "CP total",
-                "CP_60": "CP >60 días",
-                "Max_Dias": "Máx días"
-            }
-        )
-
+    if prioridad_semanal.empty:
+        st.info("No hay productos atrasados o críticos bajo el filtro actual.")
+    else:
         st.dataframe(
-            preparar_display_pesos(
-                tabla_admin,
-                columnas_pesos=["CP total", "CP >60 días"],
-                columnas_porcentaje=["% seguimiento", "% atrasado", "% crítico", "% atraso"]
+            estilo_tabla_operativa(
+                preparar_display_pesos(prioridad_semanal, columnas_pesos=["CP"])
             ),
             use_container_width=True,
             hide_index=True
         )
 
-    st.markdown("#### Prioridad semanal: casos críticos STA >120 días")
 
-    columnas_criticas = [
-        "Administrativo",
-        "Estado Control",
-        "Tramo",
-        "Días Proceso",
-        "STA",
-        "Marca",
-        "Id Ficha",
-        "Id Producto",
-        "Serie",
-        "Descripción",
-        "CP"
-    ]
-
-    criticos = (
-        df_filtrado[df_filtrado["Días Proceso"] > 120]
-        .sort_values("Días Proceso", ascending=False)
-        .head(15)
-    )
-
-    st.dataframe(
-        preparar_display_pesos(criticos[columnas_criticas], columnas_pesos=["CP"]),
-        use_container_width=True,
-        hide_index=True
-    )
-
-
-with tab4:
+with tab2:
     if df_anterior_filtrado is None:
         st.info("No hay corte anterior registrado para calcular movimientos semanales.")
     else:
         st.markdown(
-            f"#### Movimientos entre {fecha_anterior.strftime('%d-%m-%Y')} "
-            f"y {fecha_corte.strftime('%d-%m-%Y')}"
+            f"#### Cambios respecto al corte anterior: {fecha_anterior.strftime('%d-%m-%Y')} "
+            f"→ {fecha_corte.strftime('%d-%m-%Y')}"
         )
 
         stock_anterior = len(df_anterior_filtrado)
@@ -1808,7 +3257,9 @@ with tab4:
         with m5:
             st.metric("Variación neta", neto, f"{formato_porcentaje_puntos(pct_neto)} vs anterior")
 
-        st.markdown("#### Resumen de movimientos por dimensión")
+        st.info(generar_resumen_movimiento_operativo(mov_admin, movimientos))
+
+        st.markdown("#### Resumen por responsable, STA y marca")
 
         r1, r2, r3 = st.tabs(
             [
@@ -1819,20 +3270,20 @@ with tab4:
         )
 
         with r1:
-            st.dataframe(mov_admin, use_container_width=True, hide_index=True)
+            st.dataframe(estilo_tabla_operativa(mov_admin), use_container_width=True, hide_index=True)
 
         with r2:
-            st.dataframe(mov_sta, use_container_width=True, hide_index=True)
+            st.dataframe(estilo_tabla_operativa(mov_sta), use_container_width=True, hide_index=True)
 
         with r3:
-            st.dataframe(mov_marca, use_container_width=True, hide_index=True)
+            st.dataframe(estilo_tabla_operativa(mov_marca), use_container_width=True, hide_index=True)
 
-        st.markdown("#### Detalle de movimientos")
+        st.markdown("#### Movimientos que requieren revisión")
+        st.caption("Primero revisar deterioros, cambios a >60, cambios a >120 y casos que siguen críticos. Nuevos y salidos quedan como complemento.")
 
-        sub1, sub2, sub3, sub4, sub5 = st.tabs(
+        sub1, sub2, sub3, sub4 = st.tabs(
             [
-                "Nuevos",
-                "Salidos",
+                "Empeoraron de tramo",
                 "Pasaron >60",
                 "Pasaron >120",
                 "Siguen críticos"
@@ -1841,42 +3292,65 @@ with tab4:
 
         with sub1:
             st.dataframe(
-                preparar_display_pesos(movimientos["Nuevos"], columnas_pesos=["CP"]),
+                estilo_tabla_operativa(
+                    preparar_display_pesos(movimientos["Empeoraron de tramo"], columnas_pesos=["CP"])
+                ),
                 use_container_width=True,
                 hide_index=True
             )
 
         with sub2:
             st.dataframe(
-                preparar_display_pesos(movimientos["Salidos"], columnas_pesos=["CP"]),
+                estilo_tabla_operativa(
+                    preparar_display_pesos(movimientos["Pasaron >60"], columnas_pesos=["CP"])
+                ),
                 use_container_width=True,
                 hide_index=True
             )
 
         with sub3:
             st.dataframe(
-                preparar_display_pesos(movimientos["Pasaron >60"], columnas_pesos=["CP"]),
+                estilo_tabla_operativa(
+                    preparar_display_pesos(movimientos["Pasaron >120"], columnas_pesos=["CP"])
+                ),
                 use_container_width=True,
                 hide_index=True
             )
 
         with sub4:
             st.dataframe(
-                preparar_display_pesos(movimientos["Pasaron >120"], columnas_pesos=["CP"]),
+                estilo_tabla_operativa(
+                    preparar_display_pesos(movimientos["Siguen críticos"], columnas_pesos=["CP"])
+                ),
                 use_container_width=True,
                 hide_index=True
             )
 
-        with sub5:
-            st.dataframe(
-                preparar_display_pesos(movimientos["Siguen críticos"], columnas_pesos=["CP"]),
-                use_container_width=True,
-                hide_index=True
-            )
+        with st.expander("Ver detalle complementario: nuevos y salidos", expanded=False):
+            comp1, comp2 = st.tabs(["Nuevos", "Salidos"])
+
+            with comp1:
+                st.dataframe(
+                    estilo_tabla_operativa(
+                        preparar_display_pesos(movimientos["Nuevos"], columnas_pesos=["CP"])
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+            with comp2:
+                st.dataframe(
+                    estilo_tabla_operativa(
+                        preparar_display_pesos(movimientos["Salidos"], columnas_pesos=["CP"])
+                    ),
+                    use_container_width=True,
+                    hide_index=True
+                )
 
 
-with tab5:
-    st.markdown("#### Detalle filtrable")
+with tab3:
+    st.markdown("#### Detalle operativo filtrable")
+    st.caption("La tabla responde a los filtros del panel lateral. Usar búsqueda directa para ficha, producto, serie o descripción.")
 
     columnas_detalle = [
         "Id Ficha",
@@ -1906,12 +3380,14 @@ with tab5:
     detalle = df_filtrado[columnas_detalle].sort_values("Días Proceso", ascending=False)
 
     st.dataframe(
-        preparar_display_pesos(detalle, columnas_pesos=["CP"]),
+        estilo_tabla_operativa(
+            preparar_display_pesos(detalle, columnas_pesos=["CP"])
+        ),
         use_container_width=True,
         hide_index=True
     )
 
-    st.markdown("#### Descarga")
+    st.markdown("#### Descarga operativa")
 
     resumen_exportar = pd.DataFrame({
         "Indicador": list(resumen_actual.keys()),
@@ -1934,15 +3410,16 @@ with tab5:
     fecha_actual = datetime.now().strftime("%Y%m%d_%H%M")
 
     st.download_button(
-        label="Descargar detalle filtrado en Excel",
+        label="Descargar detalle operativo en Excel",
         data=archivo_excel,
         file_name=f"detalle_filtrado_sta_{fecha_actual}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
 
-with tab6:
+with tab4:
     st.markdown("#### Histórico semanal registrado")
+    st.caption("Respaldo de tendencia. La gestión principal se realiza sobre el corte actual y los cambios del corte anterior.")
 
     historico_actualizado = cargar_historico()
 
@@ -2005,41 +3482,120 @@ with tab6:
             resumen_historico["Productos_120"] / resumen_historico["Total_productos"]
         ) * 100
 
+        resumen_historico["Atrasados + críticos"] = resumen_historico["Productos_60"]
+
+        historico_visible = resumen_historico[
+            [
+                "Fecha Corte",
+                "Total_productos",
+                "CP_total",
+                "Atrasados + críticos",
+                "Productos_120",
+                "CP_60",
+                "% >60 días",
+                "% >120 días"
+            ]
+        ].rename(
+            columns={
+                "Total_productos": "Total productos",
+                "CP_total": "CP total",
+                "Productos_120": "Críticos >120",
+                "CP_60": "CP >60"
+            }
+        )
+
         st.dataframe(
-            preparar_display_pesos(
-                resumen_historico,
-                columnas_pesos=["CP_total", "CP_60", "CP_120"],
-                columnas_porcentaje=[
-                    "% seguimiento",
-                    "% atrasados",
-                    "% críticos",
-                    "% >60 días",
-                    "% >120 días"
-                ]
+            estilo_tabla_operativa(
+                preparar_display_pesos(
+                    historico_visible,
+                    columnas_pesos=["CP total", "CP >60"],
+                    columnas_porcentaje=["% >60 días", "% >120 días"]
+                )
             ),
             use_container_width=True,
             hide_index=True
         )
 
+        with st.expander("Ver histórico completo", expanded=False):
+            st.dataframe(
+                estilo_tabla_operativa(
+                    preparar_display_pesos(
+                        resumen_historico,
+                        columnas_pesos=["CP_total", "CP_60", "CP_120"],
+                        columnas_porcentaje=[
+                            "% seguimiento",
+                            "% atrasados",
+                            "% críticos",
+                            "% >60 días",
+                            "% >120 días"
+                        ]
+                    )
+                ),
+                use_container_width=True,
+                hide_index=True
+            )
+
         resumen_historico_grafico = resumen_historico.rename(columns={"Criticos": "Crítico"})
 
-        fig_hist = px.line(
-            resumen_historico_grafico,
-            x="Fecha Corte",
-            y=["Total_productos", "Seguimiento", "Atrasados", "Crítico"],
-            markers=True,
-            title="Evolución semanal por estado de control",
-            color_discrete_map={
-                "Seguimiento": COLOR_ESTADOS["Seguimiento"],
-                "Atrasados": COLOR_ESTADOS["Atrasado"],
-                "Crítico": COLOR_ESTADOS["Crítico"],
-            }
-        )
+        col_hist1, col_hist2 = st.columns(2)
 
-        fig_hist.update_layout(
-            height=430,
-            xaxis_title="Fecha corte",
-            yaxis_title="Productos"
-        )
+        with col_hist1:
+            fig_stock = px.line(
+                resumen_historico_grafico,
+                x="Fecha Corte",
+                y="Total_productos",
+                markers=True,
+                title="Evolución del stock total"
+            )
 
-        st.plotly_chart(fig_hist, use_container_width=True)
+            fig_stock.update_layout(
+                height=345,
+                xaxis_title="Fecha corte",
+                yaxis_title="Productos",
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#111827", size=12),
+                title_font=dict(size=17, color="#111827"),
+                yaxis=dict(gridcolor="#E5E7EB"),
+                margin=dict(l=20, r=20, t=48, b=20)
+            )
+
+            st.plotly_chart(fig_stock, use_container_width=True)
+
+        with col_hist2:
+            fig_riesgo = px.line(
+                resumen_historico_grafico,
+                x="Fecha Corte",
+                y=["Seguimiento", "Atrasados", "Crítico"],
+                markers=True,
+                title="Evolución del riesgo operativo",
+                color_discrete_map={
+                    "Seguimiento": COLOR_ESTADOS["Seguimiento"],
+                    "Atrasados": COLOR_ESTADOS["Atrasado"],
+                    "Crítico": COLOR_ESTADOS["Crítico"],
+                }
+            )
+
+            fig_riesgo.update_layout(
+                height=345,
+                xaxis_title="Fecha corte",
+                yaxis_title="Productos",
+                legend_title_text="Estado",
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                font=dict(color="#111827", size=12),
+                title_font=dict(size=17, color="#111827"),
+                yaxis=dict(gridcolor="#E5E7EB"),
+                margin=dict(l=20, r=20, t=48, b=20)
+            )
+
+            st.plotly_chart(fig_riesgo, use_container_width=True)
+
+st.markdown(
+    """
+    <div class="app-footer">
+        Dashboard STA · Control operativo semanal · ▣ Desarrollado por <strong>Hugo Morales</strong>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
